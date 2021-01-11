@@ -1,6 +1,7 @@
 package game
 
 import (
+	"encoding/json"
 	"log"
 	"reflect"
 	"strconv"
@@ -9,14 +10,33 @@ import (
 
 func TestRoom_defineRoles(t *testing.T) {
 	players := Players{}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 2; i++ {
 		s := strconv.Itoa(i)
-		players[s] = NewPlayer(s)
+		p := NewPlayer(s)
+		go func() {
+			select {
+			case <-p.Update:
+				b, err := json.Marshal(NewPlayerState(p))
+				if err != nil {
+					log.Println(err)
+				}
+				log.Println(string(b))
+			}
+		}()
+		players[s] = p
 	}
 
 	room := NewRoom(players)
-	room.Run()
+	err := room.Run()
+	if err != nil {
+		panic(err)
+	}
+	constable := players["0"].Character.(*Constable)
+	err = room.Perform(constable.Shoot(players["1"]))
+	if err != nil {
+		panic(err)
+	}
 	for _, v := range players {
-		log.Println(reflect.TypeOf(v.Role))
+		log.Printf("PlayerID: %s Role: %v", v.ID, reflect.TypeOf(v.Character))
 	}
 }
