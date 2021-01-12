@@ -10,6 +10,7 @@ var allowedActions = map[string][]string{
 const (
 	ConstableShootAction = "constable.shoot"
 	DoctorHealAction     = "doctor.heal"
+	VoteAction           = "game.vote"
 )
 
 // Action represents players actions

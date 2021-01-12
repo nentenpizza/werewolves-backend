@@ -10,13 +10,14 @@ func (char *Constable) Shoot(other *Player) Action {
 	defer char.Unlock()
 	return NewAction(ConstableShootAction, func(_ *Room) error {
 		if char.bullets <= 0 {
-			return errors.New("game: Constable out of bullets")
+			return errors.New("game: constable out of bullets")
 		}
 		other.Character.SetHP(other.Character.HP() - 1)
 		log.Println("Shoot in ", other.ID)
 		return nil
 	})
 }
+
 func (char *Doctor) Heal(other *Player) Action {
 	char.Lock()
 	defer char.Unlock()

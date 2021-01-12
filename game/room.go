@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"reflect"
+	"sort"
 	"sync"
 	"time"
 )
@@ -15,6 +17,11 @@ const (
 	DayVoting = "voting"
 	Night     = "night"
 	Discuss   = "discuss"
+)
+
+// Duration of each phase
+const (
+	PhaseLength = 10
 )
 
 // Capacity of room
@@ -34,12 +41,13 @@ type Settings struct {
 //
 // OpenRoles is map[PlayerID]RoleName
 // Dead is map[PlayerID]bool
+// Votes is map[PlayerID]Count of votes
 //
 // Broadcast is channel for sending a signal to all players in the room
 // to make it clear that the state needs to be updated
 type Room struct {
 	Players   Players `json:"-"`
-	state     string
+	State     string  `json:"state"`
 	ticker    *time.Ticker
 	done      chan bool
 	started   bool
@@ -48,6 +56,7 @@ type Room struct {
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	OpenRoles map[string]string `json:"open_roles"`
+	Votes     map[string]uint8  `json:"votes"`
 	Settings  Settings          `json:"settings"`
 	sync.Mutex
 }
@@ -60,7 +69,11 @@ func NewRoom(id string, name string, players Players, settings Settings) *Room {
 		Dead:      make(map[string]bool),
 		Broadcast: make(chan bool),
 		Settings:  settings,
-		OpenRoles: make(map[string]string)}
+		OpenRoles: make(map[string]string),
+		Votes:     make(map[string]uint8),
+		ID:        id,
+		Name:      name,
+	}
 }
 
 func (r *Room) init() error {
@@ -71,9 +84,12 @@ func (r *Room) init() error {
 	if err != nil {
 		return err
 	}
-	r.state = Discuss
+	r.State = Discuss
 	r.done = make(chan bool, 1)
-	r.ticker = time.NewTicker(10 * time.Second)
+	r.ticker = time.NewTicker(PhaseLength * time.Second)
+	for k := range r.Players {
+		r.Votes[k] = 0
+	}
 	return nil
 }
 
@@ -83,8 +99,7 @@ func (r *Room) IsDone() bool {
 	return ok
 }
 
-// Run define roles
-// and runs a main cycle of room (as a goroutine)
+// Run define roles and runs a main cycle of room (as a goroutine)
 func (r *Room) Run() error {
 	if !r.started {
 		if len(r.Players) < MinPlayers {
@@ -105,10 +120,12 @@ func (r *Room) Run() error {
 }
 
 func (r *Room) runBroadcaster() {
-	select {
-	case <-r.Broadcast:
-		for _, p := range r.Players {
-			p.Update <- true
+	for {
+		select {
+		case <-r.Broadcast:
+			for _, p := range r.Players {
+				p.Update <- true
+			}
 		}
 	}
 }
@@ -128,17 +145,49 @@ func (r *Room) runCycle() {
 	}
 }
 
+func (r *Room) endVotePhase() {
+	keys := make([]string, 0, len(r.Votes))
+	for k := range r.Votes {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	if r.Votes[keys[0]] == r.Votes[keys[1]] {
+		return
+	} else if r.Votes[keys[0]] < uint8(len(r.Players)/2) {
+		return
+	} else {
+		p, ok := r.Players[keys[0]]
+		if ok {
+			p.Kill()
+		}
+	}
+
+	r.resetVotes()
+}
+
+func (r *Room) resetVotes() {
+	for k := range r.Votes {
+		r.Votes[k] = 0
+	}
+	for _, p := range r.Players {
+		p.Voted = false
+	}
+}
+
 // Changes state to next value in game loop
 func (r *Room) nextState() {
 	r.Lock()
 	defer r.Unlock()
-	switch r.state {
+	switch r.State {
 	case Discuss:
-		r.state = DayVoting
+		r.State = DayVoting
 	case DayVoting:
-		r.state = Night
+		r.State = Night
+		r.endVotePhase()
 	case Night:
-		r.state = Discuss
+		r.State = Discuss
+		r.endVotePhase()
 		r.resetProtection()
 	default:
 		break
@@ -150,7 +199,7 @@ func (r *Room) Perform(action Action) error {
 	r.Lock()
 	defer r.Unlock()
 	var ok bool
-	actions := allowedActions[r.state]
+	actions := allowedActions[r.State]
 	for _, v := range actions {
 		if v == action.Name {
 			ok = true
@@ -159,10 +208,10 @@ func (r *Room) Perform(action Action) error {
 	if !ok {
 		return errors.New("game: action not allowed")
 	}
-	action.do(r)
+	err := action.do(r)
 	r.appendDead()
 	r.refreshPlayers()
-	return nil
+	return err
 }
 
 func (r *Room) appendDead() {
@@ -211,7 +260,9 @@ func (r *Room) defineRoles() error {
 	}
 	var i int
 	for _, v := range r.Players {
-		v.Character = roles[i]()
+		role := roles[i]()
+		v.Character = role
+		v.Role = reflect.TypeOf(role).Elem().Name()
 		i++
 	}
 	return nil
@@ -220,7 +271,9 @@ func (r *Room) defineRoles() error {
 // resets all doctor and other protection
 func (r *Room) resetProtection() {
 	for _, p := range r.Players {
-		p.Character.SetHP(1)
+		if p.Character.HP() > 1 {
+			p.Character.SetHP(1)
+		}
 	}
 }
 

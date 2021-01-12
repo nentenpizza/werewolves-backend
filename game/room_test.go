@@ -16,7 +16,7 @@ func TestRoom_defineRoles(t *testing.T) {
 		go func() {
 			select {
 			case <-p.Update:
-				b, err := json.Marshal(NewPlayerState(p))
+				b, err := json.Marshal(p)
 				if err != nil {
 					log.Println(err)
 				}
@@ -26,7 +26,7 @@ func TestRoom_defineRoles(t *testing.T) {
 		players[s] = p
 	}
 
-	room := NewRoom(players, Settings{})
+	room := NewRoom("1", "2", players, Settings{})
 	err := room.Run()
 	if err != nil {
 		panic(err)

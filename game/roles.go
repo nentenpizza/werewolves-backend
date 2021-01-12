@@ -55,7 +55,7 @@ func (char *Constable) HP() int {
 }
 
 func newConstable() Character {
-	return &Constable{Hp: 1}
+	return &Constable{Hp: 1, bullets: 2}
 }
 
 // Werewolf role
@@ -75,6 +75,9 @@ func (char *Werewolf) SetHP(Hp int) {
 	char.Lock()
 	defer char.Unlock()
 	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
+	}
 }
 
 func newWerewolf() Character {
@@ -104,6 +107,9 @@ func (char *AlphaWerewolf) SetHP(Hp int) {
 	char.Lock()
 	defer char.Unlock()
 	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
+	}
 }
 
 func (char *AlphaWerewolf) IsDead() bool {
@@ -133,6 +139,9 @@ func (char *Doctor) SetHP(Hp int) {
 	char.Lock()
 	defer char.Unlock()
 	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
+	}
 }
 
 func (char *Doctor) IsDead() bool {
@@ -162,6 +171,9 @@ func (char *Psychic) SetHP(Hp int) {
 	char.Lock()
 	defer char.Unlock()
 	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
+	}
 }
 
 func (char *Psychic) IsDead() bool {
@@ -191,6 +203,9 @@ func (char *Villager) SetHP(Hp int) {
 	char.Lock()
 	defer char.Unlock()
 	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
+	}
 }
 
 func (char *Villager) IsDead() bool {
@@ -220,6 +235,9 @@ func (char *Fool) SetHP(Hp int) {
 	char.Lock()
 	defer char.Unlock()
 	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
+	}
 }
 
 func (char *Fool) IsDead() bool {
