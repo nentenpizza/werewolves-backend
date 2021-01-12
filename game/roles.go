@@ -1,8 +1,10 @@
 package game
 
+import "sync"
+
 var rolesMap = map[int][]func() Character{
 	1:  {newConstable},
-	2:  {newConstable, newConstable},
+	2:  {newConstable, newDoctor},
 	3:  {newVillager, newConstable, newWerewolf},
 	4:  {newConstable, newWerewolf, newVillager, newVillager},
 	5:  {newVillager, newWerewolf, newVillager, newVillager, newConstable},
@@ -15,178 +17,217 @@ var rolesMap = map[int][]func() Character{
 
 // Character represents interface for each role in game
 // All roles in game must satisfy this interface.
-// By default all roles must have 1hp but some roles can have more
+// By default all roles must have 1Hp but some roles can have more
 type Character interface {
 	HP() int
-	SetHP(hp int)
-	Dead() bool
+	SetHP(Hp int)
+	IsDead() bool
 }
 
 // Constable role
 type Constable struct {
-	hp int
+	Hp      int
+	Dead    bool
+	bullets uint8
+	sync.Mutex
 }
 
-func (char *Constable) Dead() bool {
-	if char.hp <= 0 {
-		return true
+func (char *Constable) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
+	if char.Hp <= 0 {
+		char.Dead = true
 	}
-	return false
+
 }
 
-func newConstable() Character {
-	return &Constable{hp: 1}
-}
-
-func (char *Constable) SetHP(hp int) {
-	char.hp = hp
-
+func (char *Constable) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 func (char *Constable) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
+}
+
+func newConstable() Character {
+	return &Constable{Hp: 1}
 }
 
 // Werewolf role
 type Werewolf struct {
-	hp int
+	Hp   int
+	Dead bool
+	sync.Mutex
 }
 
 func (char *Werewolf) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
 }
 
-func (char *Werewolf) SetHP(hp int) {
-	char.hp = hp
+func (char *Werewolf) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
 }
 
 func newWerewolf() Character {
-	return &Werewolf{hp: 1}
+	return &Werewolf{Hp: 1}
 }
 
-func (char *Werewolf) Dead() bool {
-	if char.hp <= 0 {
-		return true
-	}
-	return false
+func (char *Werewolf) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 // AlphaWerewolf role
 type AlphaWerewolf struct {
-	hp int
+	Hp   int
+	Dead bool
+	sync.Mutex
 }
 
 func (char *AlphaWerewolf) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
 }
 
-func (char *AlphaWerewolf) SetHP(hp int) {
-	char.hp = hp
+func (char *AlphaWerewolf) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
 }
 
-func (char *AlphaWerewolf) Dead() bool {
-	if char.hp <= 0 {
-		return true
-	}
-	return false
+func (char *AlphaWerewolf) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 func newAlphaWerewolf() Character {
-	return &AlphaWerewolf{hp: 1}
+	return &AlphaWerewolf{Hp: 1}
 }
 
 // Doctor role
 type Doctor struct {
-	hp int
+	Hp   int
+	Dead bool
+	sync.Mutex
 }
 
 func (char *Doctor) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
 }
 
-func (char *Doctor) SetHP(hp int) {
-	char.hp = hp
+func (char *Doctor) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
 }
 
-func (char *Doctor) Dead() bool {
-	if char.hp <= 0 {
-		return true
-	}
-	return false
+func (char *Doctor) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 func newDoctor() Character {
-	return &Doctor{hp: 1}
+	return &Doctor{Hp: 1}
 }
 
 // Psychic role
 type Psychic struct {
-	hp int
+	Hp   int
+	Dead bool
+	sync.Mutex
 }
 
 func (char *Psychic) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
 }
 
-func (char *Psychic) SetHP(hp int) {
-	char.hp = hp
+func (char *Psychic) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
 }
 
-func (char *Psychic) Dead() bool {
-	if char.hp <= 0 {
-		return true
-	}
-	return false
+func (char *Psychic) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 func newPsychic() Character {
-	return &Psychic{hp: 1}
+	return &Psychic{Hp: 1}
 }
 
 // Villager role
 type Villager struct {
-	hp int
+	Hp   int
+	Dead bool
+	sync.Mutex
 }
 
 func (char *Villager) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
 }
 
-func (char *Villager) SetHP(hp int) {
-	char.hp = hp
+func (char *Villager) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
 }
 
-func (char *Villager) Dead() bool {
-	if char.hp <= 0 {
-		return true
-	}
-	return false
+func (char *Villager) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 func newVillager() Character {
-	return &Villager{hp: 1}
+	return &Villager{Hp: 1}
 }
 
 // Fool role
 type Fool struct {
-	hp int
+	Hp   int
+	Dead bool
+	sync.Mutex
 }
 
 func (char *Fool) HP() int {
-	return char.hp
+	char.Lock()
+	defer char.Unlock()
+	return char.Hp
 }
 
-func (char *Fool) SetHP(hp int) {
-	char.hp = hp
+func (char *Fool) SetHP(Hp int) {
+	char.Lock()
+	defer char.Unlock()
+	char.Hp = Hp
 }
 
-func (char *Fool) Dead() bool {
-	if char.hp <= 0 {
-		return true
-	}
-	return false
+func (char *Fool) IsDead() bool {
+	char.Lock()
+	defer char.Unlock()
+	return char.Dead
 }
 
 func newFool() Character {
-	return &Fool{hp: 1}
+	return &Fool{Hp: 1}
 }

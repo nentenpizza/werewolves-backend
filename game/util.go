@@ -12,7 +12,7 @@ func rolesList(playerCount int) ([]func() Character, error) {
 	}
 	roles, ok := rolesMap[playerCount]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("game: rolesMap for playerCount %d does not exists", playerCount))
+		return nil, fmt.Errorf("game: rolesMap for playerCount %d does not exists", playerCount)
 	}
 	var dst = make([]func() Character, len(roles), cap(roles))
 	for k, v := range roles {

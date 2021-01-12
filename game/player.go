@@ -1,18 +1,24 @@
 package game
 
 import (
-	"github.com/gorilla/websocket"
 	"reflect"
 	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
 type Player struct {
-	Character       Character `json:"role"`
+	Character       Character `json:"character,omitempty"`
 	ID              string    `json:"id"`
 	Update          chan bool `json:"-"`
 	Room            *Room     `json:"room"`
 	*websocket.Conn `json:"-"`
 	sync.Mutex      `json:"-"`
+}
+
+func (p *Player) Kill() {
+	p.Character.SetHP(0)
+	p.Room.Dead[p.ID] = true
 }
 
 func NewPlayer(ID string, conn ...*websocket.Conn) *Player {
@@ -28,16 +34,18 @@ func NewPlayer(ID string, conn ...*websocket.Conn) *Player {
 type Players map[string]*Player
 
 type Update struct {
-	Role        string   `json:"role"`
-	ID          string   `json:"id"`
-	DeadPlayers []string `json:"dead_players"`
+	Role      string    `json:"role"`
+	Character Character `json:"character"`
+	Player    *Player   `json:"me"`
+	Room      *Room     `json:"room"`
 }
 
 func NewPlayerState(player *Player) Update {
-	var deadPlayers = make([]string, 0, len(player.Room.Players))
-	for _, p := range player.Room.Dead {
-		deadPlayers = append(deadPlayers, p.ID)
-	}
 	t := reflect.TypeOf(player.Character)
-	return Update{Role: t.Elem().Name(), ID: player.ID, DeadPlayers: deadPlayers}
+	return Update{
+		Role:      t.Elem().Name(),
+		Player:    player,
+		Room:      player.Room,
+		Character: player.Character,
+	}
 }

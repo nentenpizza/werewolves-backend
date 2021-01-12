@@ -1,16 +1,26 @@
 package game
 
 var allowedActions = map[string][]string{
-	Discuss:   []string{ConstableShootAction},
-	DayVoting: []string{ConstableShootAction},
-	Night:     []string{},
+	Discuss:   []string{ConstableShootAction, DoctorHealAction},
+	DayVoting: []string{ConstableShootAction, DoctorHealAction},
+	Night:     []string{DoctorHealAction},
 }
 
+// Action names
+const (
+	ConstableShootAction = "constable.shoot"
+	DoctorHealAction     = "doctor.heal"
+)
+
+// Action represents players actions
+// for example shoot or heal
+// Room performs actions
 type Action struct {
 	Name string
-	do   func(r *Room)
+	do   func(r *Room) error
 }
 
-func NewAction(name string, do func(r *Room)) Action {
+// NewAction creates Action
+func NewAction(name string, do func(r *Room) error) Action {
 	return Action{Name: name, do: do}
 }

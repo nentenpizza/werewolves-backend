@@ -1,25 +1,28 @@
 package game
 
 import (
+	"errors"
 	"log"
 )
 
-const (
-	ConstableShootAction = "constable.shoot"
-	DoctorHealAction     = "doctor.heal"
-)
-
 func (char *Constable) Shoot(other *Player) Action {
-	return NewAction(ConstableShootAction, func(_ *Room) {
+	char.Lock()
+	defer char.Unlock()
+	return NewAction(ConstableShootAction, func(_ *Room) error {
+		if char.bullets <= 0 {
+			return errors.New("game: Constable out of bullets")
+		}
 		other.Character.SetHP(other.Character.HP() - 1)
-		other.Room.Broadcast <- true
 		log.Println("Shoot in ", other.ID)
+		return nil
 	})
 }
 func (char *Doctor) Heal(other *Player) Action {
-	return NewAction(DoctorHealAction, func(_ *Room) {
+	char.Lock()
+	defer char.Unlock()
+	return NewAction(DoctorHealAction, func(_ *Room) error {
 		other.Character.SetHP(other.Character.HP() + 1)
-		other.Room.Broadcast <- true
 		log.Println("Heal player ", other.ID)
+		return nil
 	})
 }
