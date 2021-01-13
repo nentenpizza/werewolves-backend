@@ -5,18 +5,19 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/nentenpizza/werewolves/game"
+	"github.com/nentenpizza/werewolves/werewolves"
 )
 
 //
 func main() {
-	players := game.Players{}
-	room := game.NewRoom("1", "sample_room", players, game.Settings{})
-	for i := 0; i < 10; i++ {
+	players := werewolves.Players{}
+	room := werewolves.NewRoom("1", "sample_room", players, werewolves.Settings{OpenRolesOnDeath: true})
+	for i := 0; i < 2; i++ {
 		s := strconv.Itoa(i)
-		p := game.NewPlayer(s)
+		p := werewolves.NewPlayer(s)
 		go func() {
 			for {
 				select {
@@ -25,7 +26,7 @@ func main() {
 					if err != nil {
 						log.Println(err)
 					}
-					log.Println(string(b) + "\n----------------------------\n")
+					log.Println(string(b) + strings.Repeat("\n----------------------------", 2))
 				}
 			}
 		}()
@@ -33,8 +34,20 @@ func main() {
 	}
 
 	err := room.Run()
+
 	if err != nil {
 		panic(err)
+	}
+
+	constable, ok := players["0"].Character.(*werewolves.Constable)
+	if ok {
+		room.Perform(constable.Shoot(players["1"]))
+	} else {
+
+		doctor := players["0"].Character.(*werewolves.Doctor)
+		room.Perform(doctor.Heal(players["0"]))
+		constable := players["1"].Character.(*werewolves.Constable)
+		room.Perform(constable.Shoot(players["0"]))
 	}
 
 	for _, v := range players {

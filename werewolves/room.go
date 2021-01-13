@@ -255,6 +255,7 @@ func (r *Room) RemovePlayer(playerID string) error {
 	} else {
 		p.Kill()
 	}
+	p.Update <- false
 	r.refreshPlayers()
 	return nil
 }

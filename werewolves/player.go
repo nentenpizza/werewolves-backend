@@ -3,21 +3,17 @@ package werewolves
 import (
 	"errors"
 	"sync"
-
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 )
 
 type Player struct {
-	Role            string    `json:"role"`
-	Character       Character `json:"character"`
-	Voted           bool      `json:"voted"`
-	ID              string    `json:"id,omitempty"`
-	Name            string    `json:"name,omitempty"`
-	Update          chan bool `json:"-"`
-	Room            *Room     `json:"room"`
-	*websocket.Conn `json:"-"`
-	sync.Mutex      `json:"-"`
+	Role       string    `json:"role"`
+	Character  Character `json:"character"`
+	Voted      bool      `json:"voted"`
+	ID         string    `json:"id,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	Update     chan bool `json:"-"`
+	Room       *Room     `json:"room"`
+	sync.Mutex `json:"-"`
 }
 
 func (p *Player) Vote(pID string) Action {
@@ -55,15 +51,8 @@ func (p *Player) Kill() {
 	p.Room.Dead[p.ID] = true
 }
 
-func NewPlayer(name string, conn ...*websocket.Conn) *Player {
-	id := uuid.New().String()
-	var c *websocket.Conn
-	if len(conn) > 0 {
-		c = conn[0]
-	} else {
-		c = nil
-	}
-	return &Player{ID: id, Update: make(chan bool), Conn: c, Name: name}
+func NewPlayer(id string, name string) *Player {
+	return &Player{ID: id, Update: make(chan bool), Name: name}
 }
 
 type Players map[string]*Player

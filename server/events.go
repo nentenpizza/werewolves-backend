@@ -9,6 +9,7 @@ const (
 	EventTypeCreateRoom = "create_room"
 	EventTypeJoinRoom   = "join_room"
 	EventTypeLeaveRoom  = "leave_room"
+	EventTypeStartGame  = "start_room"
 	EventTypeVote       = werewolves.VoteAction
 )
 
@@ -27,27 +28,35 @@ type Event struct {
 type (
 	// EventCreateRoom represents event for creating room
 	EventCreateRoom struct {
-		Name     string              `json:"name"`
-		ID       string              `json:"id"`
-		Settings werewolves.Settings `json:"settings"`
+		PlayerName string              `json:"player_name"`
+		RoomName   string              `json:"room_name"`
+		Settings   werewolves.Settings `json:"settings"`
 	}
 
 	// EventJoinRoom represents event for joining room
 	EventJoinRoom struct {
 		PlayerName string `json:"player_name"`
+		RoomID     string `json:"room_id"`
 	}
 
 	// EventLeaveRoom represents event for leaving room
 	EventLeaveRoom struct {
+		PlayerID string `json:"player_id"`
+		RoomID   string `json:"room_id"`
+	}
+
+	// EventStartGame runs game in specific room
+	EventStartGame struct {
+		RoomID   string `json:"room_id"`
 		PlayerID string `json:"player_id"`
 	}
 )
 
 // Events for in-game stuff
 type (
-	// used in all cases when you need only player_id and target_id
+	// TargetedEvent used in all cases when you need only player_id and target_id
 	TargetedEvent struct {
-		PlayerID string `json:"player_id`
-		TargetID string `json:"player_id`
+		PlayerID string `json:"player_id"`
+		TargetID string `json:"target_id"`
 	}
 )
