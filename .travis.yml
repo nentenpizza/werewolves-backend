@@ -1,0 +1,14 @@
+language: go
+
+go:
+    - 1.15.x
+
+install:
+    - go get -t -v
+
+script:
+    - go test ./werewolves
+    - go build ./cmd/server
+
+after_success:
+    - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash <(curl -s https://codecov.io/bash); fi
