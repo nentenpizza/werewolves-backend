@@ -3,11 +3,8 @@ language: go
 go:
     - 1.15.x
 
-install:
-    - go install
-
 script:
-    - go test ./werewolves
+    - go test -v ./werewolves
     - go build ./cmd/server
 
 after_success:
