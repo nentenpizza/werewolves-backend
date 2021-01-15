@@ -14,10 +14,10 @@ import (
 //
 func main() {
 	players := werewolves.Players{}
-	room := werewolves.NewRoom("1", "sample_room", players, werewolves.Settings{OpenRolesOnDeath: true})
+	room := werewolves.NewRoom("1", "sample_room", players, werewolves.Settings{OpenRolesOnDeath: true}, "0")
 	for i := 0; i < 2; i++ {
 		s := strconv.Itoa(i)
-		p := werewolves.NewPlayer(s)
+		p := werewolves.NewPlayer(s, "roflan_oru")
 		go func() {
 			for {
 				select {

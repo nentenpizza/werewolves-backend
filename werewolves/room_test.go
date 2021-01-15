@@ -10,9 +10,9 @@ import (
 
 func TestRoom_defineRoles(t *testing.T) {
 	players := Players{}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 10; i++ {
 		s := strconv.Itoa(i)
-		p := NewPlayer(s)
+		p := NewPlayer(s, "1")
 		go func() {
 			select {
 			case <-p.Update:
@@ -26,13 +26,8 @@ func TestRoom_defineRoles(t *testing.T) {
 		players[s] = p
 	}
 
-	room := NewRoom("1", "2", players, Settings{})
+	room := NewRoom("1", "2", players, Settings{}, "1")
 	err := room.Run()
-	if err != nil {
-		panic(err)
-	}
-	constable := players["0"].Character.(*Constable)
-	err = room.Perform(constable.Shoot(players["1"]))
 	if err != nil {
 		panic(err)
 	}
