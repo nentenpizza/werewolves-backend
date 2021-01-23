@@ -6,13 +6,13 @@ import (
 )
 
 type Player struct {
-	Role       string    `json:"role"`
-	Character  Character `json:"character"`
-	Voted      bool      `json:"voted"`
-	ID         string    `json:"id,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	Update     chan bool `json:"-"`
-	Room       *Room     `json:"room"`
+	Role       string      `json:"role"`
+	Character  Character   `json:"character"`
+	Voted      bool        `json:"voted"`
+	ID         string      `json:"id,omitempty"`
+	Name       string      `json:"name,omitempty"`
+	Update     chan []byte `json:"-"`
+	Room       *Room       `json:"room"`
 	sync.Mutex `json:"-"`
 }
 
@@ -52,7 +52,7 @@ func (p *Player) Kill() {
 }
 
 func NewPlayer(id string, name string) *Player {
-	return &Player{ID: id, Update: make(chan bool), Name: name}
+	return &Player{ID: id, Update: make(chan []byte), Name: name}
 }
 
 type Players map[string]*Player

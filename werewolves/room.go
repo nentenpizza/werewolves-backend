@@ -1,6 +1,7 @@
 package werewolves
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -21,7 +22,7 @@ const (
 
 // Duration of each phase
 const (
-	PhaseLength = 10
+	PhaseLength = 1
 )
 
 // Capacity of room
@@ -121,17 +122,6 @@ func (r *Room) Run() error {
 		r.started = true
 	}
 	return nil
-}
-
-func (r *Room) runBroadcaster() {
-	for {
-		select {
-		case <-r.Broadcast:
-			for _, p := range r.Players {
-				p.Update <- true
-			}
-		}
-	}
 }
 
 func (r *Room) runCycle() {
@@ -255,7 +245,6 @@ func (r *Room) RemovePlayer(playerID string) error {
 	} else {
 		p.Kill()
 	}
-	p.Update <- false
 	r.refreshPlayers()
 	return nil
 }
@@ -287,6 +276,21 @@ func (r *Room) resetProtection() {
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
+}
+
+func (r *Room) runBroadcaster() {
+	for {
+		select {
+		case <-r.Broadcast:
+			for _, p := range r.Players {
+				b, err := json.Marshal(p)
+				if err != nil {
+					continue
+				}
+				p.Update <- b
+			}
+		}
+	}
 }
 
 func (r *Room) refreshPlayers() {
