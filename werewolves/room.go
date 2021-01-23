@@ -249,6 +249,18 @@ func (r *Room) RemovePlayer(playerID string) error {
 	return nil
 }
 
+func (r *Room) Ressurect(playerID string) error {
+	p, ok := r.Players[playerID]
+	if !ok {
+		return fmt.Errorf(
+			"game: player with id: %s is not in %s room, room_id: %s", playerID, r.Name, r.ID,
+		)
+	}
+	p.Character.SetHP(1)
+	delete(r.Dead, playerID)
+	return nil
+}
+
 // defineRoles defines roles for Room.Players
 func (r *Room) defineRoles() error {
 	roles, err := rolesList(len(r.Players))

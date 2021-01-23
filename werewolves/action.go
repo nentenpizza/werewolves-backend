@@ -8,9 +8,10 @@ var allowedActions = map[string][]string{
 
 // Action names
 const (
-	ConstableShootAction = "constable.shoot"
-	DoctorHealAction     = "doctor.heal"
-	VoteAction           = "game.vote"
+	ConstableShootAction   = "constable.shoot"
+	DoctorHealAction       = "doctor.heal"
+	VoteAction             = "game.vote"
+	PsychicRessurectAction = "psychic.ressurect"
 )
 
 // Action represents players actions

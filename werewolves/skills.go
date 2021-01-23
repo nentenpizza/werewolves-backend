@@ -27,3 +27,12 @@ func (char *Doctor) Heal(other *Player) Action {
 		return nil
 	})
 }
+
+func (char *Psychic) Resurrect(other *Player) Action {
+	char.Lock()
+	defer char.Unlock()
+	return NewAction(PsychicRessurectAction, func(r *Room) error {
+		err := r.Ressurect(other.ID)
+		return err
+	})
+}
