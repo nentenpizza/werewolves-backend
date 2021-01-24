@@ -6,44 +6,62 @@ import (
 )
 
 type Player struct {
-	Role       string      `json:"role"`
-	Character  Character   `json:"character"`
-	Voted      bool        `json:"voted"`
-	ID         string      `json:"id,omitempty"`
-	Name       string      `json:"name,omitempty"`
-	Update     chan []byte `json:"-"`
-	Room       *Room       `json:"room"`
+	Role string `json:"role"`
+
+	// Character is a in-game character, hp, skills and other its a
+	// character responsability
+	Character Character `json:"character"`
+
+	// Voted means player voted or not in current phase
+	Voted bool `json:"voted"`
+
+	// Unique Identifier of player
+	ID string `json:"id,omitempty"`
+
+	Name string `json:"name,omitempty"`
+
+	// Here we put an in-game updates
+	Update chan Event `json:"-"`
+
+	Room *Room `json:"room"`
+
 	sync.Mutex `json:"-"`
 }
 
 func (p *Player) Vote(pID string) Action {
 	p.Lock()
 	defer p.Unlock()
-	return NewAction(VoteAction, func(r *Room) error {
-		if p.Voted == true {
-			return errors.New("game: player already voted")
-		}
-		_, ok := r.Players[pID]
-		if !ok {
-			return errors.New("game: player is not in room")
-		}
+	return NewAction(
+		VoteAction,
 
-		if r.State == DayVoting {
-			r.Votes[pID]++ // мне насрать
-			p.Voted = true // мне насрать
-		} else if r.State == Night { // мне насрать
-			if p.Role == "Werewolf" || p.Role == "AplhaWerewolf" { // мне насрать
+		func(r *Room) error {
+			if p.Voted == true {
+				return errors.New("game: player already voted")
+			}
+			_, ok := r.Players[pID]
+			if !ok {
+				return errors.New("game: player is not in room")
+			}
+
+			if r.State == DayVoting {
 				r.Votes[pID]++ // мне насрать
 				p.Voted = true // мне насрать
+			} else if r.State == Night { // мне насрать
+				if p.Role == "Werewolf" || p.Role == "AlphaWerewolf" { // мне насрать
+					r.Votes[pID]++ // мне насрать
+					p.Voted = true // мне насрать
+				} else {
+					return errors.New("game: can not vote in night as long as you not werewolf")
+				}
 			} else {
-				return errors.New("game: can not vote in night as long as you not werewolf")
+				return errors.New("game: can not vote in state discuss")
 			}
-		} else {
-			return errors.New("game: can not vote in state discuss")
-		}
 
-		return nil
-	})
+			return nil
+		},
+
+		NewEvent(VoteAction, FromEvent{p.ID, pID}),
+	)
 }
 
 func (p *Player) Kill() {
@@ -52,7 +70,7 @@ func (p *Player) Kill() {
 }
 
 func NewPlayer(id string, name string) *Player {
-	return &Player{ID: id, Update: make(chan []byte), Name: name}
+	return &Player{ID: id, Update: make(chan Event), Name: name}
 }
 
 type Players map[string]*Player

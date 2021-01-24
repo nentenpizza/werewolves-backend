@@ -1,7 +1,6 @@
 package werewolves
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -56,7 +55,7 @@ type Room struct {
 	done      chan bool
 	started   bool
 	Dead      map[string]bool   `json:"dead"`
-	Broadcast chan bool         `json:"-"`
+	Broadcast chan Event        `json:"-"`
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	OpenRoles map[string]string `json:"open_roles"`
@@ -71,7 +70,7 @@ func NewRoom(id string, name string, players Players, settings Settings, ownerID
 	return &Room{
 		Players:   players,
 		Dead:      make(map[string]bool),
-		Broadcast: make(chan bool),
+		Broadcast: make(chan Event),
 		Settings:  settings,
 		OpenRoles: make(map[string]string),
 		Votes:     make(map[string]uint8),
@@ -133,7 +132,6 @@ func (r *Room) runCycle() {
 
 		case <-r.ticker.C:
 			r.nextState()
-			r.refreshPlayers()
 
 		}
 	}
@@ -204,7 +202,7 @@ func (r *Room) Perform(action Action) error {
 	}
 	err := action.do(r)
 	r.appendDead()
-	r.refreshPlayers()
+
 	return err
 }
 
@@ -245,7 +243,6 @@ func (r *Room) RemovePlayer(playerID string) error {
 	} else {
 		p.Kill()
 	}
-	r.refreshPlayers()
 	return nil
 }
 
@@ -293,18 +290,14 @@ func init() {
 func (r *Room) runBroadcaster() {
 	for {
 		select {
-		case <-r.Broadcast:
+		case e := <-r.Broadcast:
 			for _, p := range r.Players {
-				b, err := json.Marshal(p)
-				if err != nil {
-					continue
-				}
-				p.Update <- b
+				p.Update <- e
 			}
 		}
 	}
 }
 
-func (r *Room) refreshPlayers() {
-	r.Broadcast <- true
+func (r *Room) BroadcastEvent(e Event) {
+	r.Broadcast <- e
 }

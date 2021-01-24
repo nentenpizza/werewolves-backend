@@ -1,9 +1,9 @@
 package werewolves
 
 var allowedActions = map[string][]string{
-	Discuss:   []string{ConstableShootAction, DoctorHealAction},
-	DayVoting: []string{ConstableShootAction, DoctorHealAction},
-	Night:     []string{DoctorHealAction},
+	Discuss:   {ConstableShootAction, DoctorHealAction},
+	DayVoting: {ConstableShootAction, DoctorHealAction},
+	Night:     {DoctorHealAction},
 }
 
 // Action names
@@ -12,6 +12,7 @@ const (
 	DoctorHealAction       = "doctor.heal"
 	VoteAction             = "game.vote"
 	PsychicRessurectAction = "psychic.ressurect"
+	ExecutionAction        = "game.execution"
 )
 
 // Action represents players actions
@@ -19,10 +20,14 @@ const (
 // Room performs actions
 type Action struct {
 	Name string
-	do   func(r *Room) error
+
+	// (do) must return an error if action cannot be performed
+	do func(r *Room) error
+
+	Event Event
 }
 
 // NewAction creates Action
-func NewAction(name string, do func(r *Room) error) Action {
-	return Action{Name: name, do: do}
+func NewAction(name string, do func(r *Room) error, ev Event) Action {
+	return Action{Name: name, do: do, Event: ev}
 }
