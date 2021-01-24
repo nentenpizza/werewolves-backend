@@ -201,6 +201,9 @@ func (r *Room) Perform(action Action) error {
 		return errors.New("game: action not allowed")
 	}
 	err := action.do(r)
+	if err == nil {
+		r.BroadcastEvent(action.Event)
+	}
 	r.appendDead()
 
 	return err

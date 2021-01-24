@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestRoom_defineRoles(t *testing.T) {
@@ -15,8 +16,8 @@ func TestRoom_defineRoles(t *testing.T) {
 		p := NewPlayer(s, "1")
 		go func() {
 			select {
-			case <-p.Update:
-				b, err := json.Marshal(p)
+			case ev := <-p.Update:
+				b, err := json.Marshal(ev)
 				if err != nil {
 					log.Println(err)
 				}
@@ -34,4 +35,5 @@ func TestRoom_defineRoles(t *testing.T) {
 	for _, v := range players {
 		log.Printf("PlayerID: %s Role: %v", v.ID, reflect.TypeOf(v.Character))
 	}
+	time.Sleep(100 * time.Second)
 }
