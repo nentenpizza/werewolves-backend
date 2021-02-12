@@ -3,14 +3,14 @@ package storage
 import (
 	"time"
 
-	sq "github.com/Masterminds/squirrel"
-	"github.com/fatih/structs"
+	//sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 )
 
 type (
 	UsersStorage interface {
 		Create(User) error
+		Exists(username string) (has bool ,_ error )
 	}
 
 	Users struct {
@@ -26,15 +26,14 @@ type (
 		Email             string    `sq:"email" json:"email,omitempty" validate:"required,email"`
 		Username          string    `sq:"username" json:"username" validate:"required"`
 		EncryptedPassword string    `db:"password_hash" sq:"password" json:"-"`
+		Wins int `sq:"wins" json:"wins"`
+		Losses int `sq:"losses" json:"losses"`
 	}
 )
 
 func (db *Users) Create(u User) error {
-	q, args, err := sq.Insert("users").SetMap(structs.Map(u)).ToSql()
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(q, args...)
+	const q = `insert into users (email, username, password_hash) values ($1,$2,$3)`
+	_, err := db.Exec(q, u.Email, u.Username, u.EncryptedPassword)
 	return err
 }
 
