@@ -44,12 +44,12 @@ func (p *Player) Vote(pID string) Action {
 			}
 
 			if r.State == DayVoting {
-				r.Votes[pID]++ // мне насрать
-				p.Voted = true // мне насрать
-			} else if r.State == Night { // мне насрать
+				r.Votes[pID]++
+				p.Voted = true
+			} else if r.State == Night {
 				if p.Role == "Werewolf" || p.Role == "AlphaWerewolf" { // мне насрать
-					r.Votes[pID]++ // мне насрать
-					p.Voted = true // мне насрать
+					r.Votes[pID]++
+					p.Voted = true
 				} else {
 					return errors.New("game: can not vote in night as long as you not werewolf")
 				}

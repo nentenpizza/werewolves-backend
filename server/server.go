@@ -3,11 +3,22 @@ package server
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nentenpizza/werewolves/werewolves"
 )
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func init() {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+}
 
 // Server represents a game server which talks with game
 // PlayersRoom is map[PlayerID]RoomID
@@ -37,35 +48,46 @@ func (s *Server) WsReader(conn *websocket.Conn) {
 			continue
 		}
 		log.Println(string(msg))
-		s.HandleEvent(&ev, conn)
+		s.HandleEvent(&ev, conn) // handle error pls
 	}
 }
 
-func (s *Server) HandleEvent(event *Event, conn *websocket.Conn) {
+func (s *Server) HandleEvent(event *Event, conn *websocket.Conn) error {
 	switch event.Type {
 	case EventTypeCreateRoom:
-		var ev EventCreateRoom
-		b, err := json.Marshal(event.Data)
+		ev := EventCreateRoom{}
+		mapstructure.Decode(event.Data, &ev)
+		err := s.handleCreateRoom(&ev, conn)
 		if err != nil {
-			log.Println(err)
-			return
+			return err
 		}
-		err = json.Unmarshal(b, &ev)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		s.handleCreateRoom(&ev, conn)
-	case EventTypeJoinRoom:
-		ev := event.Data.(EventJoinRoom)
-		s.handleJoinRoom(&ev, conn)
-	case EventTypeLeaveRoom:
 
+	case EventTypeJoinRoom:
+		ev := EventJoinRoom{}
+		mapstructure.Decode(event.Data, &ev)
+		err := s.handleJoinRoom(&ev, conn)
+		if err != nil {
+			return err
+		}
+	case EventTypeLeaveRoom:
+		ev := EventLeaveRoom{}
+		mapstructure.Decode(event.Data, &ev)
+		err := s.handleLeaveRoom(&ev, conn)
+		if err != nil {
+			return err
+		}
 	case EventTypeStartGame:
+		ev := EventStartGame{}
+		mapstructure.Decode(event.Data, &ev)
+		err := s.handleStartGame(&ev, conn)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn) {
+func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn) error {
 	id := uuid.New().String()
 	player := werewolves.NewPlayer(id, event.PlayerName)
 	roomID := uuid.New().String()
@@ -74,71 +96,59 @@ func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn) 
 	s.PlayersRoom[player.ID] = room.ID
 	err := conn.WriteJSON(player)
 	if err != nil {
-		log.Println(err)
-		conn.WriteJSON(RoomNotFoundErr)
+		return err
 	}
 	go func() {
 		for {
 			select {
 			case value := <-player.Update:
-				if value == true {
-					err := conn.WriteJSON(player)
-					if err != nil {
-						log.Println(err)
-					}
-				} else {
+				err := conn.WriteJSON(value)
+				if err != nil {
 					return
 				}
 			}
 		}
 	}()
+	return nil
 }
 
-func (s *Server) handleJoinRoom(event *EventJoinRoom, conn *websocket.Conn) {
+func (s *Server) handleJoinRoom(event *EventJoinRoom, conn *websocket.Conn) error {
 	room, ok := s.Rooms[event.RoomID]
 	if !ok {
-		conn.WriteJSON(RoomNotFoundErr)
-		return
+		return RoomNotFoundErr
 	}
 	id := uuid.New().String()
 	player := werewolves.NewPlayer(id, event.PlayerName)
 	err := room.AddPlayer(player)
-	if err != nil {
-		err := conn.WriteJSON(GameAlreadyStartedErr)
-		if err != nil {
-			log.Println(err)
-		}
-		return
-	}
+
+	return err
 }
 
-func (s *Server) handleLeaveRoom(event *EventLeaveRoom, conn *websocket.Conn) {
+func (s *Server) handleLeaveRoom(event *EventLeaveRoom, conn *websocket.Conn) error {
 	room, ok := s.Rooms[event.RoomID]
 	if !ok {
-		conn.WriteJSON(RoomNotFoundErr)
-		return
+		return RoomNotFoundErr
 	}
 	player, ok := room.Players[event.PlayerID]
 	if !ok {
-		conn.WriteJSON(PlayerNotFoundErr)
-		return
+		return PlayerNotFoundErr
 	}
 	room.RemovePlayer(player.ID)
+	return nil
 }
 
-func (s *Server) handleStartGame(event *EventStartGame, conn *websocket.Conn) {
+func (s *Server) handleStartGame(event *EventStartGame, conn *websocket.Conn) error {
 	room, ok := s.Rooms[event.RoomID]
 	if !ok {
-		conn.WriteJSON(RoomNotFoundErr)
-		return
+		return RoomNotFoundErr
+
 	}
 	if event.PlayerID != room.Owner {
-		conn.WriteJSON(NotAllowedErr)
-		return
+		return NotAllowedErr
 	}
 	err := room.Run()
 	if err != nil {
-		conn.WriteJSON(RoomStartErr)
-		return
+		return RoomStartErr
 	}
+	return nil
 }

@@ -13,3 +13,7 @@ type ServerError struct {
 	Type    string `json:"type"`
 	Message string `json:"message"`
 }
+
+func (se *ServerError) Error() string {
+	return se.Type + " " + se.Message
+}

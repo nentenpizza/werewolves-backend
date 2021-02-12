@@ -55,7 +55,7 @@ type Room struct {
 	done      chan bool
 	started   bool
 	Dead      map[string]bool   `json:"dead"`
-	Broadcast chan Event        `json:"-"`
+	broadcast chan Event        `json:"-"`
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	OpenRoles map[string]string `json:"open_roles"`
@@ -70,7 +70,7 @@ func NewRoom(id string, name string, players Players, settings Settings, ownerID
 	return &Room{
 		Players:   players,
 		Dead:      make(map[string]bool),
-		Broadcast: make(chan Event),
+		broadcast: make(chan Event),
 		Settings:  settings,
 		OpenRoles: make(map[string]string),
 		Votes:     make(map[string]uint8),
@@ -286,14 +286,10 @@ func (r *Room) resetProtection() {
 	}
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 func (r *Room) runBroadcaster() {
 	for {
 		select {
-		case e := <-r.Broadcast:
+		case e := <-r.broadcast:
 			for _, p := range r.Players {
 				p.Update <- e
 			}
@@ -302,5 +298,13 @@ func (r *Room) runBroadcaster() {
 }
 
 func (r *Room) BroadcastEvent(e Event) {
-	r.Broadcast <- e
+	r.broadcast <- e
+}
+
+func (r *Room) Broadcast() chan Event {
+	return r.broadcast
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
