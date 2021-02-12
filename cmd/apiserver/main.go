@@ -1,4 +1,4 @@
-package apiserver
+package main
 
 import (
 	"github.com/labstack/echo/v4"
@@ -27,7 +27,7 @@ func main(){
 		})
 	e := newEcho()
 	h.Register(
-		e.Group("/api/auth"),
+		e.Group("/api"),
 		handler.AuthService{Secret: uuid})
 	e.Logger.Fatal(e.Start(":7070"))
 }
