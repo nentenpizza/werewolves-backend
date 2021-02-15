@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/handler"
+	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
 	"log"
@@ -21,14 +22,23 @@ func main(){
 	if err := db.Ping(); err !=nil{
 		log.Fatal(err)
 	}
+	defer db.Close()
 	h := handler.New(
 		handler.Handler{
-		DB:db,
-		})
+			DB:db,
+		},
+		)
 	e := newEcho()
+	g := e.Group("/clehtivmute", newJWTMiddleware())
+
+
 	h.Register(
-		e.Group("/api"),
+		e.Group("/api/auth"),
 		handler.AuthService{Secret: uuid})
+	h.Register(
+		g.Group("/game"),
+		handler.NewServer(),
+		)
 	e.Logger.Fatal(e.Start(":7070"))
 }
 
@@ -47,4 +57,11 @@ func newEcho() *echo.Echo{
 		e.DefaultHTTPErrorHandler(err, c)
 	}
 	return e
+}
+
+func newJWTMiddleware() echo.MiddlewareFunc {
+	return middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: uuid,
+		Claims:     &jwt.Claims{},
+	})
 }

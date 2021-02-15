@@ -1,4 +1,4 @@
-package server
+package handler
 
 import (
 	"encoding/json"
@@ -27,7 +27,7 @@ type Server struct {
 	PlayersRoom map[string]string
 }
 
-func New() *Server {
+func NewServer() *Server {
 	return &Server{
 		Rooms:       make(map[string]*werewolves.Room),
 		PlayersRoom: make(map[string]string),

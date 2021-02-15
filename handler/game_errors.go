@@ -1,4 +1,4 @@
-package server
+package handler
 
 var (
 	AlreadyInRoomErr      = &ServerError{"you_in_room_error", ""}
