@@ -1,15 +1,15 @@
 package handler
 
 import (
+	"database/sql"
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
+	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/storage"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"time"
 )
-
-type User struct {
-}
 
 type AuthService struct {
 	handler
@@ -84,10 +84,38 @@ func (s AuthService) Login(c echo.Context) error {
 	if err := c.Validate(&form); err != nil {
 		return err
 	}
-	return nil
+	user, err := s.db.Users.ByUsername(form.Username)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return err
+		}
+		return c.JSON(http.StatusNotFound, app.Err("user not found"))
+	}
+
+	if !s.compareHash(form.Password,user.EncryptedPassword) {
+		return c.JSON(http.StatusBadRequest, app.Err("wrong credentials"))
+	}
+
+	if user.BannedUntil.Sub(time.Now()).Seconds() > 0 {
+		return c.JSON(http.StatusForbidden, app.Err("user is restricted"))
+	}
+
+	token := jwt.NewWithClaims(jwt.Claims{
+		Username: user.Username,
+	})
+
+	t, err := token.SignedString(s.Secret)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(200, echo.Map{"token": t})
 }
 
-// CompareHash returns nil on success
-func (s AuthService) CompareHash(password string, hash string) error {
-	return bcrypt.CompareHashAndPassword([]byte(password), []byte(hash))
+func (s AuthService) compareHash(password string, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash),[]byte(password))
+	if err != nil{
+		return false
+	}
+	return true
 }

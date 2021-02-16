@@ -2,14 +2,13 @@
 package main
 
 import (
+	"github.com/nentenpizza/werewolves/handler"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 
 	"github.com/nentenpizza/werewolves/werewolves"
-
-	"github.com/nentenpizza/werewolves/server"
 )
 
 func main() {
@@ -18,9 +17,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ev := &server.Event{
-		server.EventTypeCreateRoom,
-		&server.EventCreateRoom{"debil", "dura", werewolves.Settings{}},
+	ev := &handler.Event{
+		handler.EventTypeCreateRoom,
+		&handler.EventCreateRoom{"debil", "dura", werewolves.Settings{}},
 	}
 	if err != nil {
 		panic(err)

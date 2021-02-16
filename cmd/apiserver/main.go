@@ -29,14 +29,14 @@ func main(){
 		},
 		)
 	e := newEcho()
-	g := e.Group("/clehtivmute", newJWTMiddleware())
+	g := e.Group("", newJWTMiddleware())
 
 
 	h.Register(
 		e.Group("/api/auth"),
 		handler.AuthService{Secret: uuid})
 	h.Register(
-		g.Group("/game"),
+		g.Group("/api"),
 		handler.NewServer(),
 		)
 	e.Logger.Fatal(e.Start(":7070"))

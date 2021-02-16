@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
 
@@ -23,8 +24,19 @@ func init() {
 // Server represents a game server which talks with game
 // PlayersRoom is map[PlayerID]RoomID
 type Server struct {
+	handler
 	Rooms       map[string]*werewolves.Room
 	PlayersRoom map[string]string
+}
+
+func (s Server) REGISTER(h handler, g *echo.Group)  {
+	for i:=0;i<10;i++ {
+		room := werewolves.NewRoom(uuid.New().String(), uuid.New().String(), werewolves.Players{}, werewolves.Settings{}, uuid.New().String())
+		s.Rooms[room.ID] = room
+	}
+	s.handler = h
+	g.GET("/ws", s.WsEndpoint)
+	g.GET("/allrooms", s.AllRooms)
 }
 
 func NewServer() *Server {
@@ -111,6 +123,7 @@ func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn) 
 	}()
 	return nil
 }
+
 
 func (s *Server) handleJoinRoom(event *EventJoinRoom, conn *websocket.Conn) error {
 	room, ok := s.Rooms[event.RoomID]

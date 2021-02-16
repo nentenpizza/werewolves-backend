@@ -49,7 +49,7 @@ type Settings struct {
 //
 type Room struct {
 	Owner     string  `json:"owner"`
-	Players   Players `json:"-"`
+	Players   Players `json:"players"`
 	State     string  `json:"state"`
 	ticker    *time.Ticker
 	done      chan bool

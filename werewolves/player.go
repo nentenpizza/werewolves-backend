@@ -23,7 +23,7 @@ type Player struct {
 	// Here we put an in-game updates
 	Update chan Event `json:"-"`
 
-	Room *Room `json:"room"`
+	Room *Room `json:"-"`
 
 	sync.Mutex `json:"-"`
 }

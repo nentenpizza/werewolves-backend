@@ -1,13 +1,12 @@
 package main
 
 import (
-	"github.com/nentenpizza/werewolves/server"
-
 	"github.com/labstack/echo/v4"
+	"github.com/nentenpizza/werewolves/handler"
 )
 
 func main() {
-	s := server.New()
+	s := handler.NewServer()
 
 	e := echo.New()
 	e.GET("/ws", func() echo.HandlerFunc {
