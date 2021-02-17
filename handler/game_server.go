@@ -2,12 +2,13 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
-	j"github.com/dgrijalva/jwt-go"
+	j "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/jwt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -30,22 +31,25 @@ type Server struct {
 	handler
 	Rooms       map[string]*werewolves.Room
 	PlayersRoom map[string]string
+	PlayerConns map[string]*websocket.Conn
 	Secret []byte
 }
 
 func (s Server) REGISTER(h handler, g *echo.Group)  {
-	for i:=0;i<10;i++ {
-		room := werewolves.NewRoom(uuid.New().String(), uuid.New().String(), werewolves.Players{}, werewolves.Settings{}, uuid.New().String())
+	for i:=0;i<5;i++ {
+		room := werewolves.NewRoom(strconv.Itoa(rand.Intn(100)), strconv.Itoa(rand.Intn(100)), werewolves.Players{}, werewolves.Settings{}, strconv.Itoa(rand.Intn(100)))
 		s.Rooms[room.ID] = room
 	}
 	s.handler = h
 	g.GET("/allrooms", s.AllRooms)
+	g.POST("/joinroom", s.JoinRoom)
 }
 
 func NewServer(secret []byte) *Server {
 	return &Server{
 		Rooms:       make(map[string]*werewolves.Room),
 		PlayersRoom: make(map[string]string),
+		PlayerConns: make(map[string]*websocket.Conn),
 		Secret: secret,
 	}
 }
@@ -94,20 +98,6 @@ func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claim
 			return err
 		}
 
-	case EventTypeJoinRoom:
-		ev := &EventJoinRoom{}
-		b, err  := json.Marshal(event.Data)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(b, ev)
-		if err != nil {
-			return err
-		}
-		err = s.handleJoinRoom(ev, conn, token)
-		if err != nil {
-			return err
-		}
 	case EventTypeLeaveRoom:
 		ev := EventLeaveRoom{}
 		err := mapstructure.Decode(event.Data, &ev)
@@ -157,22 +147,6 @@ func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn, 
 	return nil
 }
 
-
-func (s *Server) handleJoinRoom(event *EventJoinRoom, conn *websocket.Conn, token jwt.Claims) error {
-	_, ok := s.PlayersRoom[token.Username]
-	if ok{
-		return errors.New("player already in room")
-	}
-	room, ok := s.Rooms[event.RoomID]
-	if !ok {
-		return RoomNotFoundErr
-	}
-	s.PlayersRoom[token.Username] = room.Name
-	id := uuid.New().String()
-	player := werewolves.NewPlayer(id, token.Username)
-	err := room.AddPlayer(player)
-	return err
-}
 
 func (s *Server) handleLeaveRoom(event *EventLeaveRoom, conn *websocket.Conn) error {
 	room, ok := s.Rooms[event.RoomID]

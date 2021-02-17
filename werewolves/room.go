@@ -64,6 +64,7 @@ type Room struct {
 	sync.Mutex
 }
 
+
 // NewRoom constructor for Room
 // Pass empty Settings for defaults
 func NewRoom(id string, name string, players Players, settings Settings, ownerID string) *Room {
@@ -95,6 +96,10 @@ func (r *Room) init() error {
 		r.Votes[k] = 0
 	}
 	return nil
+}
+
+func (r *Room) Started() bool {
+	return r.started
 }
 
 // IsDone returns is game ended or not

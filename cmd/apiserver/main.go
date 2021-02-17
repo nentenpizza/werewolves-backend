@@ -35,7 +35,7 @@ func main(){
 
 
 	h.Register(
-		g.Group("/api/auth"),
+		e.Group("/api/auth"),
 		handler.AuthService{Secret: uuid})
 	h.Register(
 		g.Group("/api"),

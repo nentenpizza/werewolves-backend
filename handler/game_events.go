@@ -33,11 +33,6 @@ type (
 		Settings   werewolves.Settings `json:"settings"`
 	}
 
-	// EventJoinRoom represents event for joining room
-	EventJoinRoom struct {
-		RoomID     string `json:"room_id"`
-	}
-
 	// EventLeaveRoom represents event for leaving room
 	EventLeaveRoom struct {
 		PlayerID string `json:"player_id"`
@@ -49,6 +44,7 @@ type (
 		RoomID   string `json:"room_id"`
 		PlayerID string `json:"player_id"`
 	}
+
 )
 
 // Events for in-game stuff
