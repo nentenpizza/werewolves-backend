@@ -23,21 +23,23 @@ func main(){
 		log.Fatal(err)
 	}
 	defer db.Close()
+	server := handler.NewServer(uuid)
 	h := handler.New(
 		handler.Handler{
 			DB:db,
 		},
 		)
 	e := newEcho()
+	e.GET("/ws", server.WsEndpoint)
 	g := e.Group("", newJWTMiddleware())
 
 
 	h.Register(
-		e.Group("/api/auth"),
+		g.Group("/api/auth"),
 		handler.AuthService{Secret: uuid})
 	h.Register(
 		g.Group("/api"),
-		handler.NewServer(),
+		server,
 		)
 	e.Logger.Fatal(e.Start(":7070"))
 }

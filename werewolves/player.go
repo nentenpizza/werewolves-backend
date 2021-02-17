@@ -25,6 +25,8 @@ type Player struct {
 
 	Room *Room `json:"-"`
 
+
+
 	sync.Mutex `json:"-"`
 }
 

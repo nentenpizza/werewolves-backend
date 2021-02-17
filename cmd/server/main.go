@@ -11,8 +11,8 @@ func main() {
 	e := echo.New()
 	e.GET("/ws", func() echo.HandlerFunc {
 		return echo.HandlerFunc(func(c echo.Context) error {
-			s.WsEndpoint(c)
-			return nil
+			err := s.WsEndpoint(c)
+			return err
 		})
 	}())
 

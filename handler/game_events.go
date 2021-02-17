@@ -20,22 +20,21 @@ const (
 )
 
 type Event struct {
-	Type string      `json:"type"`
+	Type string      `json:"event_type"`
 	Data interface{} `json:"data"`
+	Token string `json:"token"`
 }
 
 // Event for pre-game stuff
 type (
 	// EventCreateRoom represents event for creating room
 	EventCreateRoom struct {
-		PlayerName string              `json:"player_name"`
 		RoomName   string              `json:"room_name"`
 		Settings   werewolves.Settings `json:"settings"`
 	}
 
 	// EventJoinRoom represents event for joining room
 	EventJoinRoom struct {
-		PlayerName string `json:"player_name"`
 		RoomID     string `json:"room_id"`
 	}
 
