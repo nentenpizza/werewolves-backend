@@ -42,7 +42,6 @@ func (s Server) REGISTER(h handler, g *echo.Group)  {
 	}
 	s.handler = h
 	g.GET("/allrooms", s.AllRooms)
-	g.POST("/joinroom", s.JoinRoom)
 }
 
 func NewServer(secret []byte) *Server {
@@ -81,6 +80,7 @@ func (s *Server) WsReader(conn *websocket.Conn) {
 		err = s.HandleEvent(&ev, conn, jwtWithClaims) // handle error pls
 		if err != nil {
 			log.Println(err)
+			conn.WriteJSON(err)
 		}
 	}
 }
@@ -97,7 +97,6 @@ func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claim
 		if err != nil {
 			return err
 		}
-
 	case EventTypeLeaveRoom:
 		ev := EventLeaveRoom{}
 		err := mapstructure.Decode(event.Data, &ev)
@@ -118,6 +117,21 @@ func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claim
 		if err != nil {
 			return err
 		}
+	case EventTypeJoinRoom:
+		ev := EventJoinRoom{}
+		js, err := json.Marshal(event.Data)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(js, &ev)
+		if err != nil {
+			return err
+		}
+		err = s.handleJoinRoom(&ev, conn, token)
+		if err != nil {
+			return err
+		}
+		conn.WriteJSON(event)
 	}
 	return nil
 }
@@ -174,5 +188,23 @@ func (s *Server) handleStartGame(event *EventStartGame, conn *websocket.Conn) er
 	if err != nil {
 		return RoomStartErr
 	}
+	return nil
+}
+
+func (s *Server) handleJoinRoom(event *EventJoinRoom, conn *websocket.Conn, token jwt.Claims) error {
+	_, ok := s.PlayersRoom[token.Username]
+	if ok {
+		return s.serverError(AlreadyInRoomErr ,EventTypeJoinRoom)
+	}
+	room, ok := s.Rooms[event.RoomID]
+	if !ok{
+		return s.serverError(RoomNotExistsErr ,EventTypeJoinRoom)
+	}
+	if room.Started(){
+		return s.serverError(RoomStartedErr ,EventTypeJoinRoom)
+	}
+	player := werewolves.NewPlayer(token.Username, token.Username)
+	room.AddPlayer(player)
+	s.PlayersRoom[token.Username] = room.ID
 	return nil
 }

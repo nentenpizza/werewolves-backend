@@ -19,6 +19,7 @@ const (
 	EventTypeDoctorHeal     = werewolves.DoctorHealAction
 )
 
+
 type Event struct {
 	Type string      `json:"event_type"`
 	Data interface{} `json:"data"`
@@ -43,6 +44,10 @@ type (
 	EventStartGame struct {
 		RoomID   string `json:"room_id"`
 		PlayerID string `json:"player_id"`
+	}
+
+	EventJoinRoom struct {
+		RoomID string `json:"room_id"`
 	}
 
 )
