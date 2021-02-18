@@ -1,7 +1,6 @@
 package handler
 
 var (
-	//AlreadyInRoomErr      = &ServerError{"you_in_room_error"}
 	RoomNotFoundErr       = &ServerError{Type: "room_not_found_error"}
 	//GameAlreadyStartedErr = &ServerError{"game_started_error"}
 	PlayerNotFoundErr     = &ServerError{Type: "player_not_found_error"}

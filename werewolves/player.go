@@ -67,8 +67,11 @@ func (p *Player) Vote(pID string) Action {
 }
 
 func (p *Player) Kill() {
+	p.Lock()
+	defer p.Unlock()
 	p.Character.SetHP(0)
 	p.Room.Dead[p.ID] = true
+	close(p.Update)
 }
 
 func NewPlayer(id string, name string) *Player {

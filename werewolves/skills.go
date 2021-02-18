@@ -45,7 +45,7 @@ func (char *Psychic) Resurrect(other *Player) Action {
 	defer char.Unlock()
 	return NewAction(PsychicRessurectAction,
 		func(r *Room) error {
-			err := r.Ressurect(other.ID)
+			err := r.Resurrect(other.ID)
 			return err
 		},
 		NewEvent(

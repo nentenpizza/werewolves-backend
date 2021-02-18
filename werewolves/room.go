@@ -49,13 +49,14 @@ type Settings struct {
 //
 type Room struct {
 	Owner     string  `json:"owner"`
-	Players   Players `json:"players"`
+	Players   Players `json:"-"`
+	Users map[string]bool `json:"players"`
 	State     string  `json:"state"`
 	ticker    *time.Ticker
 	done      chan bool
 	started   bool
 	Dead      map[string]bool   `json:"dead"`
-	broadcast chan Event        `json:"-"`
+	broadcast chan Event
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	OpenRoles map[string]string `json:"open_roles"`
@@ -70,6 +71,7 @@ type Room struct {
 func NewRoom(id string, name string, players Players, settings Settings, ownerID string) *Room {
 	return &Room{
 		Players:   players,
+		Users: make(map[string]bool),
 		Dead:      make(map[string]bool),
 		broadcast: make(chan Event),
 		Settings:  settings,
@@ -231,6 +233,7 @@ func (r *Room) AddPlayer(p *Player) error {
 	defer r.Unlock()
 	if !r.started {
 		r.Players[p.ID] = p
+		r.Users[p.Name] = true
 	} else {
 		return errors.New("game: can't add player to started room")
 	}
@@ -250,11 +253,13 @@ func (r *Room) RemovePlayer(playerID string) error {
 		delete(r.Players, p.ID)
 	} else {
 		p.Kill()
+		kill := TargetedEvent{TargetID: p.ID}
+		r.BroadcastEvent(Event{EventType: ExecutionAction, Data: kill})
 	}
 	return nil
 }
 
-func (r *Room) Ressurect(playerID string) error {
+func (r *Room) Resurrect(playerID string) error {
 	p, ok := r.Players[playerID]
 	if !ok {
 		return fmt.Errorf(

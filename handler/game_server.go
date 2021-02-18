@@ -9,10 +9,10 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/mitchellh/mapstructure"
 	"github.com/nentenpizza/werewolves/werewolves"
 )
 
@@ -25,13 +25,48 @@ func init() {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 }
 
+type Player struct {
+	sync.Mutex
+	conn *websocket.Conn
+	*werewolves.Player
+	room *werewolves.Room
+}
+
+func (p *Player) Conn() *websocket.Conn {
+	p.Lock()
+	defer p.Unlock()
+	return p.conn
+}
+
+func (p *Player) SetRoom(r *werewolves.Room){
+	p.Lock()
+	defer p.Unlock()
+	p.room = r
+}
+func (p *Player) SetChar(plr *werewolves.Player){
+	p.Lock()
+	defer p.Unlock()
+	p.Player = plr
+}
+
+func (p *Player) Room()*werewolves.Room{
+	p.Lock()
+	defer p.Unlock()
+	return p.room
+}
+func (p *Player) Char() *werewolves.Player{
+	p.Lock()
+	defer p.Unlock()
+	return p.Player
+}
+
 // Server represents a game server which talks with game
 // PlayersRoom is map[PlayerID]RoomID
 type Server struct {
 	handler
 	Rooms       map[string]*werewolves.Room
 	PlayersRoom map[string]string
-	PlayerConns map[string]*websocket.Conn
+	Players map[string]*Player
 	Secret []byte
 }
 
@@ -48,13 +83,15 @@ func NewServer(secret []byte) *Server {
 	return &Server{
 		Rooms:       make(map[string]*werewolves.Room),
 		PlayersRoom: make(map[string]string),
-		PlayerConns: make(map[string]*websocket.Conn),
+		Players: make(map[string]*Player),
 		Secret: secret,
 	}
 }
 
 func (s *Server) WsReader(conn *websocket.Conn) {
+	var username string
 	defer conn.Close()
+	defer delete(s.Players, username)
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
@@ -77,6 +114,10 @@ func (s *Server) WsReader(conn *websocket.Conn) {
 			continue
 		}
 		jwtWithClaims := jwt.From(token)
+		if username == ""{
+			username = jwtWithClaims.Username
+			s.Players[jwtWithClaims.Username] = &Player{conn: conn}
+		}
 		err = s.HandleEvent(&ev, conn, jwtWithClaims) // handle error pls
 		if err != nil {
 			log.Println(err)
@@ -86,10 +127,14 @@ func (s *Server) WsReader(conn *websocket.Conn) {
 }
 
 func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claims) error {
+	js, err := json.Marshal(event.Data)
+	if err != nil {
+		return err
+	}
 	switch event.Type {
 	case EventTypeCreateRoom:
 		ev := EventCreateRoom{}
-		err := mapstructure.Decode(event.Data, &ev)
+		err = json.Unmarshal(js, &ev)
 		if err != nil {
 			return err
 		}
@@ -98,18 +143,13 @@ func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claim
 			return err
 		}
 	case EventTypeLeaveRoom:
-		ev := EventLeaveRoom{}
-		err := mapstructure.Decode(event.Data, &ev)
-		if err != nil {
-			return err
-		}
-		err = s.handleLeaveRoom(&ev, conn)
+		err = s.handleLeaveRoom(token)
 		if err != nil {
 			return err
 		}
 	case EventTypeStartGame:
 		ev := EventStartGame{}
-		err := mapstructure.Decode(event.Data, &ev)
+		err = json.Unmarshal(js, &ev)
 		if err != nil {
 			return err
 		}
@@ -119,10 +159,6 @@ func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claim
 		}
 	case EventTypeJoinRoom:
 		ev := EventJoinRoom{}
-		js, err := json.Marshal(event.Data)
-		if err != nil {
-			return err
-		}
 		err = json.Unmarshal(js, &ev)
 		if err != nil {
 			return err
@@ -131,14 +167,14 @@ func (s *Server) HandleEvent(event *Event, conn *websocket.Conn, token jwt.Claim
 		if err != nil {
 			return err
 		}
-		conn.WriteJSON(event)
+
 	}
-	return nil
+	return conn.WriteJSON(event)
 }
 
+
 func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn, token jwt.Claims) error {
-	id := uuid.New().String()
-	player := werewolves.NewPlayer(id, token.Username)
+	player := werewolves.NewPlayer(token.Username, token.Username)
 	roomID := uuid.New().String()
 	room := werewolves.NewRoom(roomID, event.RoomName, werewolves.Players{}, event.Settings, player.ID)
 	s.Rooms[room.ID] = room
@@ -162,17 +198,16 @@ func (s *Server) handleCreateRoom(event *EventCreateRoom, conn *websocket.Conn, 
 }
 
 
-func (s *Server) handleLeaveRoom(event *EventLeaveRoom, conn *websocket.Conn) error {
-	room, ok := s.Rooms[event.RoomID]
+func (s *Server) handleLeaveRoom(token jwt.Claims) error {
+	player, ok := s.Players[token.Username]
 	if !ok {
-		return RoomNotFoundErr
+		return s.serverError(PlayerNotFoundErr, EventTypeLeaveRoom)
 	}
-	player, ok := room.Players[event.PlayerID]
-	if !ok {
-		return PlayerNotFoundErr
+	if player.Room() != nil {
+		delete(s.PlayersRoom, token.Username)
+		return player.Room().RemovePlayer(player.ID)
 	}
-	err := room.RemovePlayer(player.ID)
-	return err
+	return nil
 }
 
 func (s *Server) handleStartGame(event *EventStartGame, conn *websocket.Conn) error {
@@ -206,5 +241,26 @@ func (s *Server) handleJoinRoom(event *EventJoinRoom, conn *websocket.Conn, toke
 	player := werewolves.NewPlayer(token.Username, token.Username)
 	room.AddPlayer(player)
 	s.PlayersRoom[token.Username] = room.ID
+	p, ok := s.Players[token.Username]
+	if !ok {
+		return s.serverError(PlayerNotFoundErr, EventTypeJoinRoom)
+	}
+	p.SetRoom(room)
+	p.SetChar(player)
+	go func() {
+		for {
+			select {
+			case value, ok := <-player.Update:
+				if !ok{
+					return
+				}
+				err := conn.WriteJSON(value)
+				if err != nil {
+					return
+				}
+			}
+		}
+	}()
+	conn.WriteJSON(player)
 	return nil
 }
