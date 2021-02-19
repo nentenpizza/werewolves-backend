@@ -4,8 +4,7 @@ go:
     - 1.15.x
 
 script:
-    - go test -v ./werewolves
-    - go build -o wolves_server ./cmd/server 
+    - go build -o wolves_server ./cmd/apiserver
 
 after_success:
     - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash <(curl -s https://codecov.io/bash); fi
