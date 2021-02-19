@@ -111,7 +111,7 @@ func (r *Room) IsDone() bool {
 }
 
 // Run define roles and runs a main cycle of room (as a goroutine)
-func (r *Room) Run() error {
+func (r *Room) Start() error {
 	if !r.started {
 		if len(r.Players) < MinPlayers {
 			return errors.New("not enough players to start")
@@ -191,6 +191,9 @@ func (r *Room) nextState() {
 	default:
 		break
 	}
+	state := StateChangedEvent{State: r.State}
+	ev := Event{EventTypeStateChanged, state}
+	r.BroadcastEvent(ev)
 }
 
 // Perform validates Action and performs it
@@ -234,6 +237,7 @@ func (r *Room) AddPlayer(p *Player) error {
 	if !r.started {
 		r.Players[p.ID] = p
 		r.Users[p.Name] = true
+		p.Room = r
 	} else {
 		return errors.New("game: can't add player to started room")
 	}

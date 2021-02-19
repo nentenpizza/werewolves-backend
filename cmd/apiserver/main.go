@@ -30,7 +30,7 @@ func main(){
 		},
 		)
 	e := newEcho()
-	e.GET("/ws", server.WsEndpoint)
+	e.GET("/ws/:token", server.WsEndpoint)
 	g := e.Group("", newJWTMiddleware())
 
 

@@ -23,7 +23,6 @@ const (
 type Event struct {
 	Type string      `json:"event_type"`
 	Data interface{} `json:"data"`
-	Token string `json:"token"`
 }
 
 // Event for pre-game stuff
@@ -40,11 +39,6 @@ type (
 		RoomID   string `json:"room_id"`
 	}
 
-	// EventStartGame runs game in specific room
-	EventStartGame struct {
-		RoomID   string `json:"room_id"`
-		PlayerID string `json:"player_id"`
-	}
 
 	EventJoinRoom struct {
 		RoomID string `json:"room_id"`
@@ -53,12 +47,13 @@ type (
 )
 
 
-
 // Events for in-game stuff
 type (
+
+
 	// TargetedEvent used in all cases when you need only player_id and target_id
 	TargetedEvent struct {
-		PlayerID string `json:"player_id"`
-		TargetID string `json:"target_id"`
+		PlayerID string `json:"player_id,omitempty"`
+		TargetID string `json:"target_id,omitempty"`
 	}
 )

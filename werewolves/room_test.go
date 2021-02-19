@@ -28,7 +28,7 @@ func TestRoom_defineRoles(t *testing.T) {
 	}
 
 	room := NewRoom("1", "2", players, Settings{}, "1")
-	err := room.Run()
+	err := room.Start()
 	if err != nil {
 		panic(err)
 	}

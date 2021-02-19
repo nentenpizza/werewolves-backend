@@ -7,6 +7,7 @@ var (
 	RoomStartErr          = &ServerError{Type: "cannot_start_room_error"}
 	NotAllowedErr         = &ServerError{Type: "not_allowed_error"}
 
+	NotInRoomRoom = &ServerError{Type: "you_not_in_room"}
 	JoinRoomErr 		  =	&ServerError{Type: "failed_to_join_room"}
 	AlreadyInRoomErr = &ServerError{Type: "already_in_room"}
 	RoomNotExistsErr = &ServerError{Type: "room_not_exists"}

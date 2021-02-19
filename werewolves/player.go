@@ -16,14 +16,14 @@ type Player struct {
 	Voted bool `json:"voted"`
 
 	// Unique Identifier of player
-	ID string `json:"id,omitempty"`
+	ID string `json:"id"`
 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Here we put an in-game updates
 	Update chan Event `json:"-"`
 
-	Room *Room `json:"-"`
+	Room *Room `json:"room"`
 
 
 
