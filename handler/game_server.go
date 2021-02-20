@@ -25,7 +25,7 @@ func init() {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 }
 
-const reconnectTime = 90 * time.Second
+const reconnectTime = 5 * time.Second
 
 type Client struct {
 	sync.Mutex
@@ -35,6 +35,7 @@ type Client struct {
 	AFK bool
 	Token jwt.Claims
 	Unreached []interface{}
+	quit chan bool
 }
 
 func (c *Client) Conn() *websocket.Conn {
@@ -71,7 +72,28 @@ func (c *Client) Char() *werewolves.Player{
 	return c.Player
 }
 
+func (c *Client) ListenRoom(){
+	for {
+		if c.Player != nil {
+			select {
+			case value, ok := <-c.Player.Update:
+				if ok {
+					c.WriteJSON(value)
+				} else {
+					return
+				}
+			case <- c.quit:
+				return
+			}
+		}else{
+			return
+		}
+	}
+}
+
 func (c *Client) WriteJSON(i interface{}) error {
+	c.Lock()
+	defer c.Unlock()
 	err := c.conn.WriteJSON(i)
 	if err != nil{
 		c.Unreached = append(c.Unreached, i)
@@ -81,8 +103,6 @@ func (c *Client) WriteJSON(i interface{}) error {
 }
 
 func (c *Client) SendUnreached(){
-	c.Lock()
-	defer c.Unlock()
 	if len(c.Unreached) > 0{
 		for _, e := range c.Unreached{
 			c.WriteJSON(e)
@@ -98,9 +118,10 @@ type Server struct {
 	Rooms       map[string]*werewolves.Room
 	Clients map[string]*Client
 	Secret []byte
+	sync.Mutex
 }
 
-func (s Server) REGISTER(h handler, g *echo.Group)  {
+func (s *Server) REGISTER(h handler, g *echo.Group)  {
 	for i:=0;i<5;i++ {
 		room := werewolves.NewRoom(strconv.Itoa(rand.Intn(100)), strconv.Itoa(rand.Intn(100)), werewolves.Players{}, werewolves.Settings{}, strconv.Itoa(rand.Intn(100)))
 		s.Rooms[room.ID] = room
@@ -120,30 +141,30 @@ func NewServer(secret []byte) *Server {
 func (s *Server) WsReader(conn *websocket.Conn, token jwt.Claims) {
 	client, ok := s.Clients[token.Username]
 	if !ok {
-		client = &Client{conn: conn, Token: token, AFK: false}
+		client = &Client{conn: conn, Token: token, AFK: false, quit: make(chan bool, 1)}
 		s.Clients[token.Username] = client
 	}else {
 		log.Printf("reconnected %s", token.Username)
-		client.UpdateConn(conn)
 		client.AFK = false
+		client.Token = token
+		client.UpdateConn(conn)
 		client.SendUnreached()
 	}
-	defer conn.Close()
-	defer func(){
-		log.Printf("waiting for %s", token.Username)
-		client.AFK = true
-		time.AfterFunc(reconnectTime, func(){
-			if client.AFK == true {
-				log.Printf("disconnected %s", token.	Username)
-				s.Disconnect(client)
 
-			}
-		})
-	}()
+	defer conn.Close()
+
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			break
+			log.Println(err)
+			log.Printf("waiting for %s", token.Username)
+			client.AFK = true
+			time.AfterFunc(reconnectTime, func(){
+				if client.AFK == true {
+					s.Disconnect(client)
+				}
+			})
+			return
 		}
 		var ev Event
 		err = json.Unmarshal(msg, &ev)
@@ -162,10 +183,14 @@ func (s *Server) WsReader(conn *websocket.Conn, token jwt.Claims) {
 
 
 func(s *Server) Disconnect(client *Client){
+	client.quit<-true
 	if client.Room() != nil{
-		client.Room().RemovePlayer(client.ID)
+		err := client.Room().RemovePlayer(client.Token.Username)
+		log.Println(err)
 	}
-	delete(s.Clients,client.Token.Username)
+	delete(s.Clients ,client.Token.Username)
+	log.Printf("disconnected %s", client.Token.Username)
+
 }
 
 func (s *Server) HandleEvent(event *Event, client *Client) error {
@@ -185,7 +210,7 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 			return err
 		}
 	case EventTypeLeaveRoom:
-		err = s.handleLeaveRoom(client)
+		err = s.handleLeaveRoom(event, client)
 		if err != nil {
 			return err
 		}
@@ -200,7 +225,7 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 		if err != nil {
 			return err
 		}
-		err = s.handleJoinRoom(&ev, client)
+		err = s.handleJoinRoom(&ev,event, client)
 		if err != nil {
 			return err
 		}
@@ -228,33 +253,25 @@ func (s *Server) handleCreateRoom(event *EventCreateRoom,client *Client) error {
 	}
 	c.SetRoom(room)
 	c.SetChar(player)
+	go c.ListenRoom()
 	err = client.WriteJSON(player)
 	if err != nil {
 		return err
 	}
-	go func() {
-		for {
-			select {
-			case value := <-player.Update:
-				err := client.WriteJSON(value)
-				if err != nil {
-					return
-				}
-			}
-		}
-	}()
+
+
+
 	return nil
 }
 
 
-func (s *Server) handleLeaveRoom(client *Client) error {
-	client, ok := s.Clients[client.Token.Username]
-	if !ok {
-		return s.serverError(PlayerNotFoundErr, EventTypeLeaveRoom)
-	}
+func (s *Server) handleLeaveRoom(ev *Event, client *Client) error {
 	if client.Room() != nil {
 		err := client.Room().RemovePlayer(client.ID)
+		ev.Data = EventLeaveRoom{PlayerID: client.Token.Username}
+		client.Room().BroadcastEvent(ev)
 		client.SetRoom(nil)
+		client.quit <- true
 		return err
 	}
 	return nil
@@ -275,7 +292,7 @@ func (s *Server) handleStartGame(client *Client) error {
 	return nil
 }
 
-func (s *Server) handleJoinRoom(event *EventJoinRoom, client *Client) error {
+func (s *Server) handleJoinRoom(event *EventJoinRoom, ev *Event, client *Client) error {
 	c, ok := s.Clients[client.Token.Username]
 	if !ok {
 		return s.serverError(PlayerNotFoundErr ,EventTypeJoinRoom)
@@ -292,26 +309,16 @@ func (s *Server) handleJoinRoom(event *EventJoinRoom, client *Client) error {
 	}
 	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
 	room.AddPlayer(player)
-	p, ok := s.Clients[client.Token.Username]
 	if !ok {
 		return s.serverError(PlayerNotFoundErr, EventTypeJoinRoom)
 	}
-	p.SetRoom(room)
-	p.SetChar(player)
-	go func() {
-		for {
-			select {
-			case value, ok := <-player.Update:
-				if !ok{
-					return
-				}
-				err := client.WriteJSON(value)
-				if err != nil {
-					return
-				}
-			}
-		}
-	}()
+	event.PlayerID = client.Token.Username
+	ev.Data = event
+	c.SetRoom(room)
+	c.SetChar(player)
+	go c.ListenRoom()
+	room.BroadcastEvent(ev)
+
 	client.WriteJSON(player)
 	return nil
 }

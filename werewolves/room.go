@@ -3,6 +3,7 @@ package werewolves
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -17,11 +18,12 @@ const (
 	DayVoting = "voting"
 	Night     = "night"
 	Discuss   = "discuss"
+	Prepare = "prepare"
 )
 
 // Duration of each phase
 const (
-	PhaseLength = 1
+	PhaseLength = 1 * time.Second
 )
 
 // Capacity of room
@@ -56,7 +58,7 @@ type Room struct {
 	done      chan bool
 	started   bool
 	Dead      map[string]bool   `json:"dead"`
-	broadcast chan Event
+	broadcast chan interface{}
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
 	OpenRoles map[string]string `json:"open_roles"`
@@ -69,18 +71,20 @@ type Room struct {
 // NewRoom constructor for Room
 // Pass empty Settings for defaults
 func NewRoom(id string, name string, players Players, settings Settings, ownerID string) *Room {
-	return &Room{
+	r := &Room{
 		Players:   players,
 		Users: make(map[string]bool),
 		Dead:      make(map[string]bool),
-		broadcast: make(chan Event),
+		broadcast: make(chan interface{}),
 		Settings:  settings,
 		OpenRoles: make(map[string]string),
 		Votes:     make(map[string]uint8),
 		ID:        id,
 		Name:      name,
 		Owner:     ownerID,
+		State: Prepare,
 	}
+	return r
 }
 
 func (r *Room) init() error {
@@ -93,7 +97,7 @@ func (r *Room) init() error {
 	}
 	r.State = Discuss
 	r.done = make(chan bool, 1)
-	r.ticker = time.NewTicker(PhaseLength * time.Second)
+	r.ticker = time.NewTicker(PhaseLength)
 	for k := range r.Players {
 		r.Votes[k] = 0
 	}
@@ -123,7 +127,7 @@ func (r *Room) Start() error {
 		if err != nil {
 			return err
 		}
-		go r.runBroadcaster()
+
 		go r.runCycle()
 		r.started = true
 	}
@@ -178,6 +182,7 @@ func (r *Room) resetVotes() {
 func (r *Room) nextState() {
 	r.Lock()
 	defer r.Unlock()
+	log.Println("Next state")
 	switch r.State {
 	case Discuss:
 		r.State = DayVoting
@@ -191,8 +196,7 @@ func (r *Room) nextState() {
 	default:
 		break
 	}
-	state := StateChangedEvent{State: r.State}
-	ev := Event{EventTypeStateChanged, state}
+	ev := Event{EventTypeStateChanged, r}
 	r.BroadcastEvent(ev)
 }
 
@@ -247,6 +251,8 @@ func (r *Room) AddPlayer(p *Player) error {
 // RemovePlayer Removes player from room
 // if game started, then player will be killed
 func (r *Room) RemovePlayer(playerID string) error {
+	r.Lock()
+	defer r.Unlock()
 	p, ok := r.Players[playerID]
 	if !ok {
 		return fmt.Errorf(
@@ -257,6 +263,7 @@ func (r *Room) RemovePlayer(playerID string) error {
 		delete(r.Players, p.ID)
 	} else {
 		p.Kill()
+		delete(r.Players, p.ID)
 		kill := TargetedEvent{TargetID: p.ID}
 		r.BroadcastEvent(Event{EventType: ExecutionAction, Data: kill})
 	}
@@ -300,22 +307,14 @@ func (r *Room) resetProtection() {
 	}
 }
 
-func (r *Room) runBroadcaster() {
-	for {
-		select {
-		case e := <-r.broadcast:
-			for _, p := range r.Players {
-				p.Update <- e
-			}
-		}
+
+func (r *Room) BroadcastEvent(e interface{}) {
+	for _, p := range r.Players {
+		p.Update <- e
 	}
 }
 
-func (r *Room) BroadcastEvent(e Event) {
-	r.broadcast <- e
-}
-
-func (r *Room) Broadcast() chan Event {
+func (r *Room) Broadcast() chan interface{} {
 	return r.broadcast
 }
 

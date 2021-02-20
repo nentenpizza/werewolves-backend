@@ -21,8 +21,7 @@ type Player struct {
 	Name string `json:"name"`
 
 	// Here we put an in-game updates
-	Update chan Event `json:"-"`
-
+	Update chan interface{} `json:"-"`
 	Room *Room `json:"room"`
 
 
@@ -71,11 +70,10 @@ func (p *Player) Kill() {
 	defer p.Unlock()
 	p.Character.SetHP(0)
 	p.Room.Dead[p.ID] = true
-	close(p.Update)
 }
 
 func NewPlayer(id string, name string) *Player {
-	return &Player{ID: id, Update: make(chan Event), Name: name}
+	return &Player{ID: id, Update: make(chan interface{}), Name: name}
 }
 
 type Players map[string]*Player

@@ -35,13 +35,14 @@ type (
 
 	// EventLeaveRoom represents event for leaving room
 	EventLeaveRoom struct {
-		PlayerID string `json:"player_id"`
-		RoomID   string `json:"room_id"`
+		PlayerID string `json:"player_id,omitempty"`
+		RoomID   string `json:"room_id,omitempty"`
 	}
 
 
 	EventJoinRoom struct {
 		RoomID string `json:"room_id"`
+		PlayerID string `json:"player_id,omitempty"`
 	}
 
 )
