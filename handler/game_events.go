@@ -11,6 +11,8 @@ const (
 	EventTypeLeaveRoom  = "leave_room"
 	EventTypeStartGame  = "start_room"
 	EventTypeVote       = werewolves.VoteAction
+
+	EventTypeSendMessage = "send_message"
 )
 
 // Event types for skills
@@ -47,6 +49,13 @@ type (
 
 )
 
+// Events for chat
+type (
+	MessageEvent struct {
+		Text string `json:"text"`
+		Username string `json:"username,omitempty"`
+	}
+)
 
 // Events for in-game stuff
 type (

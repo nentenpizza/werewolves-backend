@@ -209,16 +209,19 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 		if err != nil {
 			return err
 		}
+		client.WriteJSON(event)
 	case EventTypeLeaveRoom:
 		err = s.handleLeaveRoom(event, client)
 		if err != nil {
 			return err
 		}
+		client.WriteJSON(event)
 	case EventTypeStartGame:
 		err = s.handleStartGame(client)
 		if err != nil {
 			return err
 		}
+		client.WriteJSON(event)
 	case EventTypeJoinRoom:
 		ev := EventJoinRoom{}
 		err = json.Unmarshal(js, &ev)
@@ -229,9 +232,28 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 		if err != nil {
 			return err
 		}
-
+		client.WriteJSON(event)
+	case EventTypeSendMessage:
+		ev := MessageEvent{}
+		err = json.Unmarshal(js, &ev)
+		if err != nil {
+			return err
+		}
+		err = s.handleMessage(&ev, event, client)
+		if err != nil {
+			return err
+		}
 	}
-	return client.WriteJSON(event)
+	return nil
+}
+
+func (s *Server) handleMessage(event *MessageEvent, ev *Event, client *Client) error {
+	if client.Room() != nil{
+		event.Username = client.Token.Username
+		ev.Data = event
+		client.Room().BroadcastEvent(ev)
+	}
+	return nil
 }
 
 

@@ -20,7 +20,6 @@ func (s AuthService) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
 	g.POST("/login", s.Login)
 	g.POST("/register", s.Register)
-	g.GET("/me", s.Me)
 }
 
 // Register is endpoint for signing in
@@ -111,16 +110,6 @@ func (s AuthService) Login(c echo.Context) error {
 	}
 
 	return c.JSON(200, echo.Map{"token": t})
-}
-
-func (s AuthService) Me(c echo.Context)error {
-	token := jwt.From(c.Get("user"))
-
-	user, err := s.db.Users.ByUsername(token.Username)
-	if err != nil {
-		return err
-	}
-	return c.JSON(200, user)
 }
 
 func (s AuthService) compareHash(password string, hash string) bool {

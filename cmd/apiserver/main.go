@@ -41,6 +41,10 @@ func main(){
 		g.Group("/api"),
 		server,
 		)
+	h.Register(
+		g.Group("/api/users"),
+		handler.UsersService{},
+		)
 	e.Logger.Fatal(e.Start(":7070"))
 }
 
