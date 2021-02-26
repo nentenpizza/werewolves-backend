@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"github.com/labstack/echo/v4"
@@ -17,7 +17,7 @@ type handler struct {
 	db *storage.DB
 }
 
-func New(h Handler) *handler{
+func NewHandler(h Handler) *handler {
 	return &handler{db: h.DB}
 }
 

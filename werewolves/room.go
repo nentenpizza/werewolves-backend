@@ -55,6 +55,7 @@ type Room struct {
 	Users map[string]bool `json:"players"`
 	State     string  `json:"state"`
 	ticker    *time.Ticker
+	notifyDone chan bool
 	done      chan bool
 	started   bool
 	Dead      map[string]bool   `json:"dead"`
@@ -87,6 +88,10 @@ func NewRoom(id string, name string, players Players, settings Settings, ownerID
 	return r
 }
 
+func (r *Room) Done() chan bool {
+	return r.notifyDone
+}
+
 func (r *Room) init() error {
 	for _, p := range r.Players {
 		p.Room = r
@@ -106,12 +111,6 @@ func (r *Room) init() error {
 
 func (r *Room) Started() bool {
 	return r.started
-}
-
-// IsDone returns is game ended or not
-func (r *Room) IsDone() bool {
-	_, ok := <-r.done
-	return ok
 }
 
 // Run define roles and runs a main cycle of room (as a goroutine)
@@ -139,6 +138,7 @@ func (r *Room) runCycle() {
 		select {
 		case <-r.done:
 			r.ticker.Stop()
+			r.notifyDone <- true
 			return
 
 		case <-r.ticker.C:
@@ -195,6 +195,9 @@ func (r *Room) nextState() {
 		r.resetProtection()
 	default:
 		break
+	}
+	if len(r.Players) < MinPlayers{
+		r.done <- true
 	}
 	ev := Event{EventTypeStateChanged, r}
 	r.BroadcastEvent(ev)
@@ -297,6 +300,7 @@ func (r *Room) defineRoles() error {
 	}
 	return nil
 }
+
 
 // resets all doctor and other protection
 func (r *Room) resetProtection() {

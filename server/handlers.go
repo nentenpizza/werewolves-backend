@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	j "github.com/dgrijalva/jwt-go"
@@ -34,6 +34,7 @@ func (s *Server) WsEndpoint(c echo.Context) error {
 	go s.WsReader(conn, token)
 	return nil
 }
+
 
 func (s *Server) AllRooms(c echo.Context) error {
 	return c.JSON(http.StatusOK, s.Rooms)

@@ -1,4 +1,4 @@
-package handler
+package websocket
 
 var (
 	RoomNotFoundErr       = &ServerError{Type: "room_not_found_error"}
@@ -16,22 +16,9 @@ var (
 
 type ServerError struct {
 	Type    string `json:"error"`
-	EventType string `json:"event_type"`
 	Message string `json:"message,omitempty"`
 }
 
 func (se *ServerError) Error() string {
 	return se.Type
-}
-
-func (s *Server) serverError(base *ServerError, eventType string, message ...string) *ServerError {
-	var m string
-	if len(message) > 0 {
-		m = message[0]
-	}
-	return &ServerError{
-		Type: base.Type,
-		EventType: eventType,
-		Message: m,
-	}
 }

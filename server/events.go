@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"github.com/nentenpizza/werewolves/werewolves"
@@ -67,3 +67,7 @@ type (
 		TargetID string `json:"target_id,omitempty"`
 	}
 )
+
+var EventsWithTypes = map[string]interface {}{
+	EventTypeStartGame: Event{},
+}

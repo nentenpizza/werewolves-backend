@@ -1,9 +1,11 @@
-package handler
+package server
 
 import (
 	"encoding/json"
 	"github.com/labstack/echo/v4"
+	websocket2 "github.com/nentenpizza/werewolves/handler/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
+	"github.com/nentenpizza/werewolves/storage"
 	"log"
 	"math/rand"
 	"net/http"
@@ -112,37 +114,107 @@ func (c *Client) SendUnreached(){
 	c.Unreached = make([]interface{}, 0)
 }
 
-// Server represents a game server which talks with game
-type Server struct {
-	handler
-	Rooms       map[string]*werewolves.Room
-	Clients map[string]*Client
-	Secret []byte
+type Rooms struct {
+	rooms map[string]*werewolves.Room
 	sync.Mutex
 }
 
-func (s *Server) REGISTER(h handler, g *echo.Group)  {
+func (m *Rooms) Write(key string, value *werewolves.Room)  {
+	m.Lock()
+	defer m.Unlock()
+	m.rooms[key] = value
+}
+
+func (m *Rooms) Read(key string) *werewolves.Room {
+	m.Lock()
+	defer m.Unlock()
+	return m.rooms[key]
+}
+
+func (m *Rooms) Delete(key string) {
+	m.Lock()
+	defer m.Unlock()
+	delete(m.rooms, key)
+}
+
+func (m *Rooms) MarshalJSON() ([]byte, error){
+	j, err := json.Marshal(m.rooms)
+	if err != nil {
+		return nil, err
+	}
+	return j, nil
+}
+
+func NewRooms(m map[string]*werewolves.Room) *Rooms {
+	return &Rooms{rooms: m}
+}
+
+type Clients struct {
+	clients map[string]*Client
+	sync.Mutex
+}
+
+func (m *Clients) Write(key string, value *Client)  {
+	m.Lock()
+	defer m.Unlock()
+	m.clients[key] = value
+}
+
+func (m *Clients) Read(key string) *Client {
+	m.Lock()
+	defer m.Unlock()
+	return m.clients[key]
+}
+
+func (m *Clients) Delete(key string) {
+	m.Lock()
+	defer m.Unlock()
+	delete(m.clients, key)
+}
+
+
+func (m *Clients) MarshalJSON() ([]byte, error){
+	j, err := json.Marshal(m.clients)
+	if err != nil {
+		return nil, err
+	}
+	return j, nil
+}
+
+func NewClients(c map[string]*Client) *Clients {
+	return &Clients{clients: c}
+}
+
+// Server represents a game server which talks with game
+type Server struct {
+	db *storage.DB
+	Rooms       *Rooms
+	Clients *Clients
+	Secret []byte
+}
+
+func (s *Server) REGISTER(db *storage.DB, g *echo.Group)  {
 	for i:=0;i<5;i++ {
 		room := werewolves.NewRoom(strconv.Itoa(rand.Intn(100)), strconv.Itoa(rand.Intn(100)), werewolves.Players{}, werewolves.Settings{}, strconv.Itoa(rand.Intn(100)))
-		s.Rooms[room.ID] = room
+		s.Rooms.Write(room.ID, room)
 	}
-	s.handler = h
+	s.db = db
 	g.GET("/allrooms", s.AllRooms)
 }
 
 func NewServer(secret []byte) *Server {
 	return &Server{
-		Rooms:       make(map[string]*werewolves.Room),
-		Clients: make(map[string]*Client),
-		Secret: secret,
+		Rooms:   NewRooms(make(map[string]*werewolves.Room)),
+		Clients: NewClients(make(map[string]*Client)),
+		Secret:  secret,
 	}
 }
 
 func (s *Server) WsReader(conn *websocket.Conn, token jwt.Claims) {
-	client, ok := s.Clients[token.Username]
-	if !ok {
+	client := s.Clients.Read(token.Username)
+	if client == nil {
 		client = &Client{conn: conn, Token: token, AFK: false, quit: make(chan bool, 1)}
-		s.Clients[token.Username] = client
+		s.Clients.Write(token.Username, client)
 	}else {
 		log.Printf("reconnected %s", token.Username)
 		client.AFK = false
@@ -188,7 +260,7 @@ func(s *Server) Disconnect(client *Client){
 		err := client.Room().RemovePlayer(client.Token.Username)
 		log.Println(err)
 	}
-	delete(s.Clients ,client.Token.Username)
+	s.Clients.Delete(client.Token.Username)
 	log.Printf("disconnected %s", client.Token.Username)
 
 }
@@ -239,7 +311,7 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 		if err != nil {
 			return err
 		}
-		err = s.handleMessage(&ev, event, client)
+		err = s.handleMessage(&ev, event, client)	
 		if err != nil {
 			return err
 		}
@@ -258,17 +330,17 @@ func (s *Server) handleMessage(event *MessageEvent, ev *Event, client *Client) e
 
 
 func (s *Server) handleCreateRoom(event *EventCreateRoom,client *Client) error {
-	c := s.clientByUsername(client.Token.Username)
+	c := s.Clients.Read(client.Token.Username)
 	if c == nil{
-		return s.serverError(PlayerNotFoundErr, EventTypeCreateRoom)
+		return s.serverError(websocket2.PlayerNotFoundErr, EventTypeCreateRoom)
 	}
 	if c.Room() != nil{
-		return s.serverError(AlreadyInRoomErr, EventTypeCreateRoom)
+		return s.serverError(websocket2.AlreadyInRoomErr, EventTypeCreateRoom)
 	}
 	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
 	roomID := uuid.New().String()
 	room := werewolves.NewRoom(roomID, event.RoomName, werewolves.Players{}, event.Settings, client.Token.Username)
-	s.Rooms[room.ID] = room
+	s.Rooms.Write(room.ID,room)
 	err := room.AddPlayer(player)
 	if err != nil {
 		return err
@@ -302,38 +374,35 @@ func (s *Server) handleLeaveRoom(ev *Event, client *Client) error {
 func (s *Server) handleStartGame(client *Client) error {
 	room := client.Room()
 	if room == nil{
-		return s.serverError(NotInRoomRoom, EventTypeStartGame)
+		return s.serverError(websocket2.NotInRoomRoom, EventTypeStartGame)
 	}
 	if client.Token.Username != room.Owner {
-		return s.serverError(NotAllowedErr, EventTypeStartGame)
+		return s.serverError(websocket2.NotAllowedErr, EventTypeStartGame)
 	}
 	err := room.Start()
 	if err != nil {
-		return s.serverError(RoomStartErr, EventTypeStartGame, err.Error())
+		return s.serverError(websocket2.RoomStartErr, EventTypeStartGame, err.Error())
 	}
 	return nil
 }
 
 func (s *Server) handleJoinRoom(event *EventJoinRoom, ev *Event, client *Client) error {
-	c, ok := s.Clients[client.Token.Username]
-	if !ok {
-		return s.serverError(PlayerNotFoundErr ,EventTypeJoinRoom)
+	c := s.Clients.Read(client.Token.Username)
+	if c == nil {
+		return s.serverError(websocket2.PlayerNotFoundErr, EventTypeJoinRoom)
 	}
 	if c.Room() != nil {
-		return s.serverError(AlreadyInRoomErr ,EventTypeJoinRoom)
+		return s.serverError(websocket2.AlreadyInRoomErr, EventTypeJoinRoom)
 	}
-	room, ok := s.Rooms[event.RoomID]
-	if !ok{
-		return s.serverError(RoomNotExistsErr ,EventTypeJoinRoom)
+	room := s.Rooms.Read(event.RoomID)
+	if room == nil {
+		return s.serverError(websocket2.RoomNotExistsErr, EventTypeJoinRoom)
 	}
 	if room.Started(){
-		return s.serverError(RoomStartedErr ,EventTypeJoinRoom)
+		return s.serverError(websocket2.RoomStartedErr, EventTypeJoinRoom)
 	}
 	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
 	room.AddPlayer(player)
-	if !ok {
-		return s.serverError(PlayerNotFoundErr, EventTypeJoinRoom)
-	}
 	event.PlayerID = client.Token.Username
 	ev.Data = event
 	c.SetRoom(room)
@@ -343,9 +412,4 @@ func (s *Server) handleJoinRoom(event *EventJoinRoom, ev *Event, client *Client)
 
 	client.WriteJSON(player)
 	return nil
-}
-
-func (s *Server) clientByUsername(username string) *Client{
-	c, _ := s.Clients[username]
-	return c
 }

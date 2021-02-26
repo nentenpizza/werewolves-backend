@@ -3,16 +3,32 @@ package main
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/nentenpizza/werewolves/handler"
+	"github.com/nentenpizza/werewolves/handler/http"
+	"github.com/nentenpizza/werewolves/handler/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
+	"github.com/nentenpizza/werewolves/werewolves"
+	"github.com/nentenpizza/werewolves/wserver"
 	"log"
 	"os"
 )
 
 var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd")
 
+
+func onError(err error, c wserver.Context){
+	log.Println(err, c)
+}
+
+func middle() wserver.MiddlewareFunc{
+	return func(next wserver.HandlerFunc) wserver.HandlerFunc{
+		return func(c wserver.Context) error {
+			log.Println("incoming message")
+			return next(c)
+		}
+	}
+}
 
 func main(){
 	db, err := storage.Open(os.Getenv("PG_URL"))
@@ -23,30 +39,45 @@ func main(){
 		log.Fatal(err)
 	}
 	defer db.Close()
-	server := handler.NewServer(uuid)
-	h := handler.New(
-		handler.Handler{
+
+	wsHandler := websocket.NewHandler(
+		websocket.Handler{DB: db,
+			Clients: websocket.NewClients(
+			make(map[string]*websocket.Client),
+			),
+			Rooms: websocket.NewRooms(make(map[string]*werewolves.Room)),
+			Secret: uuid,
+		},
+		)
+
+	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: onError, Claims: &jwt.Claims{}, Secret: uuid})
+	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoin, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame, wsHandler.WebsocketJWT())
+
+	h := http.NewHandler(
+		http.Handler{
 			DB:db,
 		},
 		)
 	e := newEcho()
-	e.GET("/ws/:token", server.WsEndpoint)
+	//e.GET("/ws/:token", server.WsEndpoint)
 	g := e.Group("", newJWTMiddleware())
-
+	e.GET("/ws/:token", server.Listen)
 
 	h.Register(
 		e.Group("/api/auth"),
-		handler.AuthService{Secret: uuid})
-	h.Register(
-		g.Group("/api"),
-		server,
-		)
+		http.AuthService{Secret: uuid})
+	//h.Register(
+	//	g.Group("/api"))
 	h.Register(
 		g.Group("/api/users"),
-		handler.UsersService{},
+		http.UsersService{},
 		)
 	e.Logger.Fatal(e.Start(":7070"))
 }
+
 
 func newEcho() *echo.Echo{
 	e := echo.New()
