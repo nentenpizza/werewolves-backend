@@ -13,6 +13,8 @@ var rolesMap = map[int][]func() Character{
 	8:  {newWerewolf, newConstable, newWerewolf, newVillager, newVillager, newVillager, newVillager, newConstable},
 	9:  {newWerewolf, newDoctor, newWerewolf, newPsychic, newVillager, newVillager, newVillager, newVillager, newConstable},
 	10: {newAlphaWerewolf, newWerewolf, newWerewolf, newPsychic, newFool, newVillager, newVillager, newVillager, newVillager, newConstable},
+	11: {newAlphaWerewolf, newWerewolf, newWerewolf, newPsychic, newFool, newVillager, newVillager, newVillager, newVillager,newVillager, newConstable},
+	12: {newAlphaWerewolf, newWerewolf, newWerewolf, newWerewolf ,newPsychic, newFool, newVillager, newVillager, newVillager,newVillager,newVillager, newConstable},
 }
 
 // Character represents interface for each role in game

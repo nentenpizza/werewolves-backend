@@ -52,9 +52,11 @@ func main(){
 
 	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: onError, Claims: &jwt.Claims{}, Secret: uuid})
 	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoin, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame, wsHandler.WebsocketJWT())
+	server.Handle(wserver.OnConnect, wsHandler.OnConnect, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage, wsHandler.WebsocketJWT())
 
 	h := http.NewHandler(
 		http.Handler{
@@ -65,12 +67,11 @@ func main(){
 	//e.GET("/ws/:token", server.WsEndpoint)
 	g := e.Group("", newJWTMiddleware())
 	e.GET("/ws/:token", server.Listen)
+	e.Static("/files", "assets")
 
 	h.Register(
 		e.Group("/api/auth"),
 		http.AuthService{Secret: uuid})
-	//h.Register(
-	//	g.Group("/api"))
 	h.Register(
 		g.Group("/api/users"),
 		http.UsersService{},

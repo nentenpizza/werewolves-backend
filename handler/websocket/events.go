@@ -11,6 +11,10 @@ const (
 	EventTypeLeaveRoom  = "leave_room"
 	EventTypeStartGame  = "start_room"
 	EventTypeVote       = werewolves.VoteAction
+	EventTypeAllRooms = "all_rooms"
+	EventTypeRoomCreated = "new_room"
+
+	EventTypeDisconnected = "disconnected"
 
 	EventTypeSendMessage = "send_message"
 )
@@ -35,16 +39,18 @@ type (
 		Settings   werewolves.Settings `json:"settings" mapstructure:"settings"`
 	}
 
-	// EventLeaveRoom represents event for leaving room
-	EventLeaveRoom struct {
+
+	EventRoomPlayer struct {
+		RoomID string `json:"room_id,omitempty" mapstructure:"room_id"`
 		PlayerID string `json:"player_id,omitempty" mapstructure:"player_id"`
-		RoomID   string `json:"room_id,omitempty" mapstructure:"room_id"`
 	}
 
+	EventAllRooms struct {
+		Rooms *Rooms `json:"rooms" mapstructure:"rooms"`
+	}
 
-	EventJoinRoom struct {
-		RoomID string `json:"room_id" mapstructure:"room_id"`
-		PlayerID string `json:"player_id,omitempty" mapstructure:"player_id"`
+	EventNewRoomCreated struct {
+		Room *werewolves.Room `json:"room" mapstructure:"room"`
 	}
 
 )
@@ -65,6 +71,10 @@ type (
 	TargetedEvent struct {
 		PlayerID string `json:"player_id,omitempty" mapstructure:"player_id"`
 		TargetID string `json:"target_id,omitempty" mapstructure:"target_id"`
+	}
+
+	EventPlayerID struct {
+		PlayerID string `json:"player_id,omitempty" mapstructure:"player_id"`
 	}
 )
 

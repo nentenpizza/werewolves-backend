@@ -1,7 +1,6 @@
 package wserver
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/websocket"
 )
 
@@ -10,9 +9,7 @@ type Context struct {
 
 	storage map[string]interface{}
 
-	Update Update
-
-	Token *jwt.Token
+	Update *Update
 }
 
 func (c *Context) Set(key string, val interface{}){

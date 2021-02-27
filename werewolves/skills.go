@@ -34,7 +34,7 @@ func (char *Doctor) Heal(other *Player) Action {
 			return nil
 		},
 		NewEvent(
-			PsychicRessurectAction,
+			PsychicResurrectAction,
 			TargetedEvent{other.ID},
 		),
 	)
@@ -43,13 +43,13 @@ func (char *Doctor) Heal(other *Player) Action {
 func (char *Psychic) Resurrect(other *Player) Action {
 	char.Lock()
 	defer char.Unlock()
-	return NewAction(PsychicRessurectAction,
+	return NewAction(PsychicResurrectAction,
 		func(r *Room) error {
 			err := r.Resurrect(other.ID)
 			return err
 		},
 		NewEvent(
-			PsychicRessurectAction,
+			PsychicResurrectAction,
 			TargetedEvent{other.ID},
 		),
 	)

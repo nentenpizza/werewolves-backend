@@ -4,6 +4,7 @@ package werewolves
 const (
 	EventTypeKill = "kill"
 	EventTypeStateChanged = "state_changed"
+	EventTypeShowRole = "show_role"
 )
 
 // Event represents an event that we put in Player.Update
@@ -23,6 +24,7 @@ type Event struct {
 	EventType string      `json:"event_type"`
 	Data      interface{} `json:"data"`
 }
+
 
 func NewEvent(eventType string, data interface{}) Event {
 	return Event{

@@ -12,6 +12,8 @@ import (
 
 const (
 	OnOther = iota
+	OnConnect
+	OnDisconnect
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,8 +26,8 @@ type HandlerFunc func(ctx Context) error
 type OnErrorFunc func(error, Context)
 
 type Update struct {
-	EventType string `json:"event_type"`
-	Data interface{}
+	EventType string `json:"event_type" mapstructure:"event_type"`
+	Data interface{} `json:"data" mapstructure:"data"`
 }
 
 type Settings struct {
@@ -95,43 +97,45 @@ func (s *Server) runHandler (h HandlerFunc, c Context) {
 
 // Listen is handler that upgrades http client to websocket client
 func (s *Server) Listen(c echo.Context) error {
+	var tok string
+	var err error
+	if s.useJWT {
+		tok = c.Param("token")
+		if tok == "" {
+			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
+		}
+
+
+	}
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
 	}
-	if s.useJWT {
-		tok := c.Param("token")
-		if tok == "" {
-			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
-		}
-		tokenx, err := jwt.ParseWithClaims(tok, s.claims, func(token *jwt.Token) (interface{}, error) {
-			return s.secret, nil
-		})
-		if err != nil {
-			return err
-		}
-
-		if !tokenx.Valid {
-			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
-		}
-		go s.reader(conn, tokenx)
-	}else {
-		go s.reader(conn)
-	}
+	go s.reader(conn, tok)
 	return nil
 }
 
-func (s *Server) reader(conn *websocket.Conn, token ...*jwt.Token){
+func (s *Server) reader(conn *websocket.Conn, token string){
+	ctx := Context{Conn: conn, storage: make(map[string]interface{})}
+	t := token
+	ctx.Set("token", t)
+	h, ok := s.handlers[OnConnect]
+	if ok {
+		s.runHandler(h,ctx)
+	}
 	for {
 		ctx := Context{Conn: conn, storage: make(map[string]interface{})}
+		ctx.Set("token",t)
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			s.OnError(err, ctx)
+			h, ok := s.handlers[OnDisconnect]
+			if ok {
+				s.runHandler(h, ctx)
+			}
 			return
 		}
-		if len(token) > 0 {
-			ctx.Token = token[0]
-		}
+
 		s.processUpdate(msg, ctx)
 	}
 }
@@ -144,7 +148,7 @@ func (s *Server) processUpdate(msg []byte, c Context) {
 			s.OnError(err, c)
 		}
 	}
-	c.Update = *u
+	c.Update = u
 
 	handler, ok := s.handlers[u.EventType]
 	if !ok {

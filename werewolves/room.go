@@ -296,6 +296,10 @@ func (r *Room) defineRoles() error {
 		role := roles[i]()
 		v.Character = role
 		v.Role = reflect.TypeOf(role).Elem().Name()
+		v.Update <- Event{EventType: EventTypeShowRole, Data: struct {
+			Name string `json:"name"`
+			Character Character `json:"character"`
+		}{Name: v.Role, Character: v.Character}}
 		i++
 	}
 	return nil

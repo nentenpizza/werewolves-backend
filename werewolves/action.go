@@ -11,7 +11,7 @@ const (
 	ConstableShootAction   = "constable.shoot"
 	DoctorHealAction       = "doctor.heal"
 	VoteAction             = "game.vote"
-	PsychicRessurectAction = "psychic.ressurect"
+	PsychicResurrectAction = "psychic.resurrect"
 	ExecutionAction        = "game.execution"
 )
 

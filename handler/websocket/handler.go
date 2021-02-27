@@ -3,6 +3,9 @@ package websocket
 import (
 	"encoding/json"
 	"github.com/nentenpizza/werewolves/storage"
+	"github.com/nentenpizza/werewolves/werewolves"
+	"math/rand"
+	"strconv"
 	"sync"
 )
 
@@ -57,6 +60,10 @@ type handler struct {
 }
 
 func NewHandler(h Handler) *handler {
+	for i:=0;i<5;i++ {
+		room := werewolves.NewRoom(strconv.Itoa(rand.Intn(100)), strconv.Itoa(rand.Intn(100)), werewolves.Players{}, werewolves.Settings{}, strconv.Itoa(rand.Intn(100)))
+		h.Rooms.Write(room.ID, room)
+	}
 	return &handler{
 		db: h.DB,
 		r: h.Rooms,

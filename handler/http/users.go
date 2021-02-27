@@ -15,7 +15,7 @@ type UsersService struct {
 func (s UsersService) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
 	g.GET("/me", s.Me)
-	g.GET("/user", s.GetUser)
+	g.POST("/user", s.GetUser)
 }
 
 
