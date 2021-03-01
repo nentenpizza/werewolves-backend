@@ -23,7 +23,7 @@ const (
 
 // Duration of each phase
 const (
-	PhaseLength = 1 * time.Second
+	PhaseLength = 5 * time.Second
 )
 
 // Capacity of room
@@ -149,18 +149,24 @@ func (r *Room) runCycle() {
 }
 
 func (r *Room) endVotePhase() {
-	keys := make([]string, 0, len(r.Votes))
-	for k := range r.Votes {
-		keys = append(keys, k)
+	type kv struct {
+		Key   string
+		Value uint8
 	}
-	sort.Strings(keys)
+	var sortedVotes []kv
+	for k, v := range r.Votes {
+		sortedVotes = append(sortedVotes, kv{k, v})
+	}
+	sort.Slice(sortedVotes, func(i, j int) bool {
+		return sortedVotes[i].Value > sortedVotes[j].Value
+	})
 
-	if r.Votes[keys[0]] == r.Votes[keys[1]] {
+	if sortedVotes[0].Value  == sortedVotes[1].Value  {
 		return
-	} else if r.Votes[keys[0]] < uint8(len(r.Players)/2) {
+	} else if sortedVotes[0].Value < uint8(len(r.Players)/2) && len(r.Players) > 2{
 		return
 	} else {
-		p, ok := r.Players[keys[0]]
+		p, ok := r.Players[sortedVotes[0].Key]
 		if ok {
 			p.Kill()
 		}
@@ -182,7 +188,6 @@ func (r *Room) resetVotes() {
 func (r *Room) nextState() {
 	r.Lock()
 	defer r.Unlock()
-	log.Println("Next state")
 	switch r.State {
 	case Discuss:
 		r.State = DayVoting
@@ -199,6 +204,7 @@ func (r *Room) nextState() {
 	if len(r.Players) < MinPlayers{
 		r.done <- true
 	}
+	log.Println(r.State)
 	ev := Event{EventTypeStateChanged, r}
 	r.BroadcastEvent(ev)
 }
@@ -221,12 +227,13 @@ func (r *Room) Perform(action Action) error {
 	if err == nil {
 		r.BroadcastEvent(action.Event)
 	}
-	r.appendDead()
+	log.Println(action.Name, "performed")
+	r.commitDead()
 
 	return err
 }
 
-func (r *Room) appendDead() {
+func (r *Room) commitDead() {
 	for _, p := range r.Players {
 		if p.Character.IsDead() {
 			r.Dead[p.ID] = true

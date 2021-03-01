@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func (s *handler) WebsocketJWT() wserver.MiddlewareFunc {
+func (h *handler) WebsocketJWT() wserver.MiddlewareFunc {
 	return func (next wserver.HandlerFunc) wserver.HandlerFunc {
 		return func(c wserver.Context) error {
 			tok := (c.Get("token")).(string)
@@ -16,7 +16,7 @@ func (s *handler) WebsocketJWT() wserver.MiddlewareFunc {
 				return errors.New("token is nil")
 			}
 			tokenx, err := jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
-				return s.s, nil
+				return h.s, nil
 			})
 			if err != nil {
 				return err
@@ -26,7 +26,7 @@ func (s *handler) WebsocketJWT() wserver.MiddlewareFunc {
 				return errors.New("middleware: invalid token")
 			}
 			token := j.From(tokenx)
-			client := s.c.Read(token.Username)
+			client := h.c.Read(token.Username)
 			log.Println(token.Username, "Token")
 			if client != nil {
 				client.conn = c.Conn

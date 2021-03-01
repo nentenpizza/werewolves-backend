@@ -79,7 +79,10 @@ func (c *Client) ListenRoom(){
 func (c *Client) WriteJSON(i interface{}) error {
 	c.Lock()
 	defer c.Unlock()
-	err := c.conn.WriteJSON(i)
+	var err error
+	if c.conn != nil {
+		err = c.conn.WriteJSON(i)
+	}
 	if err != nil{
 		c.Unreached = append(c.Unreached, i)
 		log.Println(c.Token.Username, "unreached", i)

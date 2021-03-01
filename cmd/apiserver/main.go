@@ -57,6 +57,7 @@ func main(){
 	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame, wsHandler.WebsocketJWT())
 	server.Handle(wserver.OnConnect, wsHandler.OnConnect, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeVote, wsHandler.OnVote, wsHandler.WebsocketJWT())
 
 	h := http.NewHandler(
 		http.Handler{
@@ -75,6 +76,10 @@ func main(){
 	h.Register(
 		g.Group("/api/users"),
 		http.UsersService{},
+		)
+	h.Register(
+		e.Group("/api/game"),
+		http.GameService{},
 		)
 	e.Logger.Fatal(e.Start(":7070"))
 }

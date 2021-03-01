@@ -2,7 +2,7 @@ package werewolves
 
 var allowedActions = map[string][]string{
 	Discuss:   {ConstableShootAction, DoctorHealAction},
-	DayVoting: {ConstableShootAction, DoctorHealAction},
+	DayVoting: {ConstableShootAction, DoctorHealAction, VoteAction},
 	Night:     {DoctorHealAction},
 }
 

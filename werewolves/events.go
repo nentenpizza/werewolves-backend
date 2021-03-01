@@ -41,7 +41,7 @@ type(
 
 // TargetedEvent represents all events that require only a target id
 type TargetedEvent struct {
-	TargetID string `json:"target_id"`
+	TargetID string `json:"player_id"`
 }
 
 // FromEvent represents all event that require From player id and target id

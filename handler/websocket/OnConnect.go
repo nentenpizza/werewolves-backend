@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (s *handler) OnConnect(ctx wserver.Context) error  {
+func (h *handler) OnConnect(ctx wserver.Context) error  {
 	client := ctx.Get("client").(*Client)
 	if client != nil{
 		if len(client.Unreached) > 1{
@@ -13,5 +13,5 @@ func (s *handler) OnConnect(ctx wserver.Context) error  {
 		}
 	}
 	log.Println("Connect")
-	return ctx.Conn.WriteJSON(Event{EventTypeAllRooms, EventAllRooms{s.r}})
+	return ctx.Conn.WriteJSON(Event{Type: EventTypeAllRooms,Data:  EventAllRooms{h.r}})
 }

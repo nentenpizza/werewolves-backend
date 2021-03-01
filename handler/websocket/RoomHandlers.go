@@ -7,14 +7,14 @@ import (
 	"log"
 )
 
-func (s *handler) OnJoinRoom(ctx wserver.Context) error {
+func (h *handler) OnJoinRoom(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
 	}
 
 	event := &EventRoomPlayer{}
-	err := s.mapToEvent(event, ctx.Data())
+	err := h.mapToEvent(event, ctx.Data())
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (s *handler) OnJoinRoom(ctx wserver.Context) error {
 	if client.Room() != nil {
 		return AlreadyInRoomErr
 	}
-	room := s.r.Read(event.RoomID)
+	room := h.r.Read(event.RoomID)
 	if room == nil {
 		return RoomNotExistsErr
 	}
@@ -40,7 +40,7 @@ func (s *handler) OnJoinRoom(ctx wserver.Context) error {
 	client.SetRoom(room)
 	client.SetChar(player)
 
-	s.c.Write(client.Token.Username, client)
+	h.c.Write(client.Token.Username, client)
 
 	go client.ListenRoom()
 
@@ -51,7 +51,7 @@ func (s *handler) OnJoinRoom(ctx wserver.Context) error {
 }
 
 
-func (s *handler) OnStartGame(ctx wserver.Context) error {
+func (h *handler) OnStartGame(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -71,7 +71,7 @@ func (s *handler) OnStartGame(ctx wserver.Context) error {
 	return nil
 }
 
-func (s *handler) OnCreateRoom(ctx wserver.Context) error {
+func (h *handler) OnCreateRoom(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -81,7 +81,7 @@ func (s *handler) OnCreateRoom(ctx wserver.Context) error {
 	}
 
 	event := &EventCreateRoom{}
-	err := s.mapToEvent(event, ctx.Data())
+	err := h.mapToEvent(event, ctx.Data())
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (s *handler) OnCreateRoom(ctx wserver.Context) error {
 
 	roomID := uuid.New().String()
 	room := werewolves.NewRoom(roomID, event.RoomName, werewolves.Players{}, event.Settings, client.Token.Username)
-	s.r.Write(room.ID,room)
+	h.r.Write(room.ID,room)
 
 	err = room.AddPlayer(player)
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *handler) OnCreateRoom(ctx wserver.Context) error {
 	client.SetRoom(room)
 	client.SetChar(player)
 
-	s.c.Write(client.Token.Username, client)
+	h.c.Write(client.Token.Username, client)
 
 	go client.ListenRoom()
 
@@ -110,16 +110,16 @@ func (s *handler) OnCreateRoom(ctx wserver.Context) error {
 	}
 
 	go func(){
-		s.c.Lock()
-		for _, c := range s.c.clients{
-			c.WriteJSON(Event{EventTypeRoomCreated, EventNewRoomCreated{Room: room}})
+		h.c.Lock()
+		for _, c := range h.c.clients{
+			c.WriteJSON(Event{Type: EventTypeRoomCreated, Data: EventNewRoomCreated{Room: room}})
 		}
-		s.c.Unlock()
+		h.c.Unlock()
 	}()
 	return nil
 }
 
-func (s *handler) OnLeaveRoom(ctx wserver.Context) error {
+func (h *handler) OnLeaveRoom(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -133,17 +133,17 @@ func (s *handler) OnLeaveRoom(ctx wserver.Context) error {
 		client.Room().BroadcastEvent(ctx.Update)
 		client.SetRoom(nil)
 		client.quit <- true
-		s.c.Delete(client.Token.Username)
+		h.c.Delete(client.Token.Username)
 	}
 	client.WriteJSON(ctx.Update)
 	return nil
 }
 
-func (s *handler) OnMessage(ctx wserver.Context) error {
+func (h *handler) OnMessage(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 
 	event := &MessageEvent{}
-	err := s.mapToEvent(event, ctx.Data())
+	err := h.mapToEvent(event, ctx.Data())
 	if err != nil {
 		return err
 	}

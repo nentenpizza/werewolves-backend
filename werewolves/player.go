@@ -2,6 +2,7 @@ package werewolves
 
 import (
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -70,6 +71,9 @@ func (p *Player) Kill() {
 	defer p.Unlock()
 	p.Character.SetHP(0)
 	p.Room.Dead[p.ID] = true
+	e := NewEvent(ExecutionAction, TargetedEvent{p.ID})
+	p.Room.BroadcastEvent(e)
+	log.Println(p.Name, "killed")
 }
 
 func NewPlayer(id string, name string) *Player {
