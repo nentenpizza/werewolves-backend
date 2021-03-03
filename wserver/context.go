@@ -2,6 +2,7 @@ package wserver
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Context struct {
@@ -20,6 +21,10 @@ func (c *Context) Get(key string) interface{} {
 	return c.storage[key]
 }
 
+func (c *Context) Bind(i interface{}) error{
+	err := mapstructure.Decode(c.Update.Data, i)
+	return err
+}
 func (c *Context) Data() interface{}{
 	return c.Update.Data
 }

@@ -17,6 +17,7 @@ const (
 	EventTypeDisconnected = "disconnected"
 
 	EventTypeSendMessage = "send_message"
+	EventTypeUseSkill = "use_skill"
 )
 
 // Event types for skills
@@ -29,6 +30,12 @@ const (
 type Event struct {
 	Type string      `json:"event_type" mapstructure:"event_type"`
 	Data interface{} `json:"data" mapstructure:"data"`
+}
+
+type EventErr struct {
+	Type string      `json:"event_type" mapstructure:"event_type"`
+	Data interface{} `json:"data" mapstructure:"data"`
+	Error *ServerError `json:"error" mapstructure:"error"`
 }
 
 // Event for pre-game stuff

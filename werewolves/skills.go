@@ -20,7 +20,7 @@ func (char *Constable) Shoot(other *Player) Action {
 			return nil
 		},
 
-		NewEvent(ConstableShootAction, TargetedEvent{other.ID}),
+		NewEvent(ConstableShootAction, ConstableShootEvent{PlayerID: char.ParentID, TargetID: other.ID}),
 	)
 }
 

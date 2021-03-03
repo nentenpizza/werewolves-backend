@@ -37,6 +37,12 @@ func (p *Player) Vote(pID string) Action {
 		VoteAction,
 
 		func(r *Room) error {
+			if r.Dead[p.ID]{
+				return errors.New("game: you are dead")
+			}
+			if r.Dead[pID] {
+				return errors.New("game: target already dead")
+			}
 			if p.Voted == true {
 				return errors.New("game: player already voted")
 			}

@@ -2,7 +2,7 @@ package werewolves
 
 import "sync"
 
-var rolesMap = map[int][]func() Character{
+var rolesMap = map[int][]func(parentID string) Character{
 	1:  {newConstable},
 	2:  {newConstable, newDoctor},
 	3:  {newVillager, newConstable, newWerewolf},
@@ -15,6 +15,10 @@ var rolesMap = map[int][]func() Character{
 	10: {newAlphaWerewolf, newWerewolf, newWerewolf, newPsychic, newFool, newVillager, newVillager, newVillager, newVillager, newConstable},
 	11: {newAlphaWerewolf, newWerewolf, newWerewolf, newPsychic, newFool, newVillager, newVillager, newVillager, newVillager,newVillager, newConstable},
 	12: {newAlphaWerewolf, newWerewolf, newWerewolf, newWerewolf ,newPsychic, newFool, newVillager, newVillager, newVillager,newVillager,newVillager, newConstable},
+}
+
+type CharSettings struct{
+	parentID string
 }
 
 // Character represents interface for each role in game
@@ -32,6 +36,7 @@ type Constable struct {
 	Dead    bool
 	bullets uint8
 	sync.Mutex
+	ParentID string
 }
 
 func (char *Constable) SetHP(Hp int) {
@@ -56,8 +61,8 @@ func (char *Constable) HP() int {
 	return char.Hp
 }
 
-func newConstable() Character {
-	return &Constable{Hp: 1, bullets: 2}
+func newConstable(parentID string) Character {
+	return &Constable{Hp: 1, bullets: 2, ParentID: parentID}
 }
 
 // Werewolf role
@@ -82,7 +87,7 @@ func (char *Werewolf) SetHP(Hp int) {
 	}
 }
 
-func newWerewolf() Character {
+func newWerewolf(parentID string) Character {
 	return &Werewolf{Hp: 1}
 }
 
@@ -120,7 +125,7 @@ func (char *AlphaWerewolf) IsDead() bool {
 	return char.Dead
 }
 
-func newAlphaWerewolf() Character {
+func newAlphaWerewolf(parentID string) Character {
 	return &AlphaWerewolf{Hp: 1}
 }
 
@@ -152,7 +157,7 @@ func (char *Doctor) IsDead() bool {
 	return char.Dead
 }
 
-func newDoctor() Character {
+func newDoctor(parentID string) Character {
 	return &Doctor{Hp: 1}
 }
 
@@ -184,7 +189,7 @@ func (char *Psychic) IsDead() bool {
 	return char.Dead
 }
 
-func newPsychic() Character {
+func newPsychic(parentID string) Character {
 	return &Psychic{Hp: 1}
 }
 
@@ -216,7 +221,7 @@ func (char *Villager) IsDead() bool {
 	return char.Dead
 }
 
-func newVillager() Character {
+func newVillager(parentID string) Character {
 	return &Villager{Hp: 1}
 }
 
@@ -248,6 +253,6 @@ func (char *Fool) IsDead() bool {
 	return char.Dead
 }
 
-func newFool() Character {
+func newFool(parentID string) Character {
 	return &Fool{Hp: 1}
 }

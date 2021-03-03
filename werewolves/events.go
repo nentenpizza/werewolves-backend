@@ -26,6 +26,7 @@ type Event struct {
 }
 
 
+
 func NewEvent(eventType string, data interface{}) Event {
 	return Event{
 		EventType: eventType,
@@ -42,6 +43,11 @@ type(
 // TargetedEvent represents all events that require only a target id
 type TargetedEvent struct {
 	TargetID string `json:"player_id"`
+}
+
+type ConstableShootEvent struct {
+	TargetID string `json:"target_id"`
+	PlayerID string `json:"player_id"`
 }
 
 // FromEvent represents all event that require From player id and target id

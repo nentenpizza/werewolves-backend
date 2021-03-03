@@ -1,21 +1,21 @@
 package websocket
 
 var (
-	RoomNotFoundErr       = &ServerError{Type: "room_not_found_error"}
+	RoomNotFoundErr       = &ServerError{Type: "RoomNotFoundErr"}
 	//GameAlreadyStartedErr = &ServerError{"game_started_error"}
-	PlayerNotFoundErr     = &ServerError{Type: "player_not_found_error"}
-	RoomStartErr          = &ServerError{Type: "cannot_start_room_error"}
-	NotAllowedErr         = &ServerError{Type: "not_allowed_error"}
+	PlayerNotFoundErr     = &ServerError{Type: "PlayerNotFoundErr"}
+	RoomStartErr          = &ServerError{Type: "RoomStartErr"}
+	NotAllowedErr         = &ServerError{Type: "NotAllowedErr"}
 
-	NotInRoomRoom = &ServerError{Type: "you_are_not_in_room"}
-	JoinRoomErr 		  =	&ServerError{Type: "failed_to_join_room"}
-	AlreadyInRoomErr = &ServerError{Type: "already_in_room"}
-	RoomNotExistsErr = &ServerError{Type: "room_not_exists"}
-	RoomStartedErr = &ServerError{Type: "room_already_started"}
+	NotInRoomRoom = &ServerError{Type: "NotInRoomRoom"}
+	JoinRoomErr 		  =	&ServerError{Type: "JoinRoomErr"}
+	AlreadyInRoomErr = &ServerError{Type: "AlreadyInRoomErr"}
+	RoomNotExistsErr = &ServerError{Type: "RoomNotExistsErr"}
+	RoomStartedErr = &ServerError{Type: "RoomStartedErr"}
 )
 
 type ServerError struct {
-	Type    string `json:"error"`
+	Type    string `json:"type"`
 	Message string `json:"message,omitempty"`
 }
 

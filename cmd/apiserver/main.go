@@ -1,6 +1,7 @@
 package main
 
 import (
+	j "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/handler/http"
@@ -50,7 +51,7 @@ func main(){
 		},
 		)
 
-	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: onError, Claims: &jwt.Claims{}, Secret: uuid})
+	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
 	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom, wsHandler.WebsocketJWT())
@@ -58,6 +59,7 @@ func main(){
 	server.Handle(wserver.OnConnect, wsHandler.OnConnect, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeVote, wsHandler.OnVote, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill, wsHandler.WebsocketJWT())
 
 	h := http.NewHandler(
 		http.Handler{
@@ -105,6 +107,6 @@ func newEcho() *echo.Echo{
 func newJWTMiddleware() echo.MiddlewareFunc {
 	return middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: uuid,
-		Claims:     &jwt.Claims{},
+		Claims:     &jwt.Claims{StandardClaims: j.StandardClaims{ExpiresAt: 0}},
 	})
 }

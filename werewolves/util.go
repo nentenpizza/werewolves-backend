@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-func rolesList(playerCount int) ([]func() Character, error) {
+func rolesList(playerCount int) ([]func(string) Character, error) {
 	if playerCount > MaxPlayers {
 		return nil, errors.New("game: players in room must be <= 10")
 	}
@@ -14,7 +14,7 @@ func rolesList(playerCount int) ([]func() Character, error) {
 	if !ok {
 		return nil, fmt.Errorf("game: rolesMap for playerCount %d does not exists", playerCount)
 	}
-	var dst = make([]func() Character, len(roles), cap(roles))
+	var dst = make([]func(string) Character, len(roles), cap(roles))
 	for k, v := range roles {
 		dst[k] = v
 	}

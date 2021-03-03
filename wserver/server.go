@@ -117,26 +117,33 @@ func (s *Server) Listen(c echo.Context) error {
 
 func (s *Server) reader(conn *websocket.Conn, token string){
 	ctx := Context{Conn: conn, storage: make(map[string]interface{})}
-	t := token
-	ctx.Set("token", t)
-	h, ok := s.handlers[OnConnect]
-	if ok {
-		s.runHandler(h,ctx)
-	}
+	ctx.Set("token", token)
+	s.runOnConnectHandler(ctx)
 	for {
 		ctx := Context{Conn: conn, storage: make(map[string]interface{})}
-		ctx.Set("token",t)
+		ctx.Set("token",token)
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			s.OnError(err, ctx)
-			h, ok := s.handlers[OnDisconnect]
-			if ok {
-				s.runHandler(h, ctx)
-			}
+			s.runOnDisconnectHandler(ctx)
 			return
 		}
 
 		s.processUpdate(msg, ctx)
+	}
+}
+
+func (s Server) runOnDisconnectHandler(ctx Context) {
+	h, ok := s.handlers[OnDisconnect]
+	if ok{
+		s.runHandler(h, ctx)
+	}
+}
+
+func (s *Server) runOnConnectHandler(ctx Context)  {
+	h, ok := s.handlers[OnConnect]
+	if ok{
+		s.runHandler(h, ctx)
 	}
 }
 

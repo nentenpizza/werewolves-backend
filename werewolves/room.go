@@ -126,9 +126,9 @@ func (r *Room) Start() error {
 		if err != nil {
 			return err
 		}
-
 		go r.runCycle()
 		r.started = true
+		r.nextState()
 	}
 	return nil
 }
@@ -300,8 +300,9 @@ func (r *Room) defineRoles() error {
 	}
 	var i int
 	for _, v := range r.Players {
-		role := roles[i]()
+		role := roles[i](v.ID)
 		v.Character = role
+
 		v.Role = reflect.TypeOf(role).Elem().Name()
 		v.Update <- Event{EventType: EventTypeShowRole, Data: struct {
 			Name string `json:"name"`
