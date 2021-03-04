@@ -65,6 +65,7 @@ type Room struct {
 	OpenRoles map[string]string `json:"open_roles"`
 	Votes     map[string]uint8  `json:"votes"`
 	Settings  Settings          `json:"settings"`
+	Groups map[string][]*Player `json:"-"`
 	sync.Mutex
 }
 
@@ -84,6 +85,7 @@ func NewRoom(id string, name string, players Players, settings Settings, ownerID
 		Name:      name,
 		Owner:     ownerID,
 		State: Prepare,
+		Groups: make(map[string][]*Player),
 	}
 	return r
 }
@@ -168,7 +170,7 @@ func (r *Room) endVotePhase() {
 	} else {
 		p, ok := r.Players[sortedVotes[0].Key]
 		if ok {
-			p.Kill()
+			r.killPlayer(p)
 		}
 	}
 
@@ -210,7 +212,7 @@ func (r *Room) nextState() {
 }
 
 // Perform validates Action and performs it
-func (r *Room) Perform(action Action) error {
+func (r *Room) 	Perform(action Action) error {
 	r.Lock()
 	defer r.Unlock()
 	var ok bool
@@ -236,7 +238,7 @@ func (r *Room) Perform(action Action) error {
 func (r *Room) commitDead() {
 	for _, p := range r.Players {
 		if p.Character.IsDead() {
-			r.Dead[p.ID] = true
+			r.killPlayer(p)
 			if r.Settings.OpenRolesOnDeath {
 				r.OpenRoles[p.ID] = p.Role
 			}
@@ -272,7 +274,7 @@ func (r *Room) RemovePlayer(playerID string) error {
 	if !r.started {
 		delete(r.Players, p.ID)
 	} else {
-		p.Kill()
+		r.killPlayer(p)
 		delete(r.Players, p.ID)
 		kill := TargetedEvent{TargetID: p.ID}
 		r.BroadcastEvent(Event{EventType: ExecutionAction, Data: kill})
@@ -302,8 +304,12 @@ func (r *Room) defineRoles() error {
 	for _, v := range r.Players {
 		role := roles[i](v.ID)
 		v.Character = role
-
 		v.Role = reflect.TypeOf(role).Elem().Name()
+		if v.Role == "Werewolf" || v.Role == "AlphaWerewolf"{
+			r.doJoinGroup("wolves",v)
+		}else{
+			r.doJoinGroup("peaceful", v)
+		}
 		v.Update <- Event{EventType: EventTypeShowRole, Data: struct {
 			Name string `json:"name"`
 			Character Character `json:"character"`
@@ -313,6 +319,49 @@ func (r *Room) defineRoles() error {
 	return nil
 }
 
+func (r *Room) InGroup(groupName string, playerID string) bool {
+	group, ok := r.Groups[groupName]
+	if ok {
+		for _, p := range group{
+			if p.ID == playerID{
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (r *Room) JoinGroup(groupName string, p *Player)  {
+	r.Lock()
+	defer r.Unlock()
+	r.doJoinGroup(groupName, p)
+
+}
+
+func (r *Room) doJoinGroup(groupName string, p *Player)  {
+	group, ok := r.Groups[groupName]
+	if ok{
+		group = append(group, p)
+	}else{
+		r.Groups[groupName] = []*Player{p}
+	}
+}
+
+func (r *Room) BroadcastTo(groupName string, i interface{}){
+	r.Lock()
+	defer r.Unlock()
+	group, ok := r.Groups[groupName]
+	if ok {
+		for _, p := range group{
+			p.Update <- i
+		}
+	}
+}
+
+func (r *Room) killPlayer(player *Player)  {
+	player.Kill()
+	r.doJoinGroup("dead", player)
+}
 
 // resets all doctor and other protection
 func (r *Room) resetProtection() {

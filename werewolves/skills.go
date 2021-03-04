@@ -12,6 +12,9 @@ func (char *Constable) Shoot(other *Player) Action {
 		ConstableShootAction,
 
 		func(_ *Room) error {
+			if other.Character.HP() <= 0{
+				return errors.New("werewolves: target already dead")
+			}
 			if char.bullets <= 0 {
 				return errors.New("game: constable out of bullets")
 			}

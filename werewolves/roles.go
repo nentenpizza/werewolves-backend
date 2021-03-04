@@ -4,7 +4,7 @@ import "sync"
 
 var rolesMap = map[int][]func(parentID string) Character{
 	1:  {newConstable},
-	2:  {newConstable, newDoctor},
+	2:  {newConstable, newAlphaWerewolf},
 	3:  {newVillager, newConstable, newWerewolf},
 	4:  {newConstable, newWerewolf, newVillager, newVillager},
 	5:  {newVillager, newWerewolf, newVillager, newVillager, newConstable},

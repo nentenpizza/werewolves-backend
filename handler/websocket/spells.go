@@ -11,6 +11,9 @@ func (h *handler) OnSkill(ctx wserver.Context) error  {
 		return PlayerNotFoundErr
 	}
 	if client.Room() != nil {
+
+		var action werewolves.Action
+
 		switch char := client.Player.Character.(type) {
 		case *werewolves.Constable:
 			e := &TargetedEvent{}
@@ -21,11 +24,12 @@ func (h *handler) OnSkill(ctx wserver.Context) error  {
 			if !ok {
 				return PlayerNotFoundErr
 			}
-			action := char.Shoot(p)
-			err := client.Room().Perform(action)
-			if err != nil {
-				return NotAllowedErr
-			}
+			action = char.Shoot(p)
+		}
+
+		err := client.Room().Perform(action)
+		if err != nil {
+			return NotAllowedErr
 		}
 	}
 	return nil
