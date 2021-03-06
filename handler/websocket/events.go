@@ -18,6 +18,7 @@ const (
 
 	EventTypeSendMessage = "send_message"
 	EventTypeUseSkill = "use_skill"
+	EventTypeRevealRole = "reveal_role"
 )
 
 // Event types for skills
@@ -61,6 +62,11 @@ type (
 	}
 
 )
+
+type EventRevealRole struct {
+	Role string `json:"role" mapstructure:"role"`
+	PlayerID string `json:"player_id" mapstructure:"player_id"`
+}
 
 // Events for chat
 type (

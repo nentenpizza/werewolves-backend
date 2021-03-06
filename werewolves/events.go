@@ -51,7 +51,7 @@ type ConstableShootEvent struct {
 }
 
 // FromEvent represents all event that require From player id and target id
-type FromEvent struct {
+type  FromEvent struct {
 	// player id who made a action
 	FromID string `json:"from_id"`
 	// target

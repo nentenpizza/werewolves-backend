@@ -1,13 +1,10 @@
 package jwt
 
 import (
-	"time"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
 func NewWithClaims(claims Claims) *jwt.Token {
-	claims.ExpiresAt = time.Now().Add(24 * time.Hour).Unix()
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 }
 

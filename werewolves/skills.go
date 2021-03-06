@@ -46,7 +46,8 @@ func (char *Doctor) Heal(other *Player) Action {
 func (char *Psychic) Resurrect(other *Player) Action {
 	char.Lock()
 	defer char.Unlock()
-	return NewAction(PsychicResurrectAction,
+	return NewAction(
+		PsychicResurrectAction,
 		func(r *Room) error {
 			err := r.Resurrect(other.ID)
 			return err

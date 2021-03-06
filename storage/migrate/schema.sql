@@ -1,3 +1,5 @@
+create database werewolves;
+
 create table users(
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),

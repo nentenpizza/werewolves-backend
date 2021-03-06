@@ -1,7 +1,6 @@
 package main
 
 import (
-	j "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/handler/http"
@@ -107,6 +106,6 @@ func newEcho() *echo.Echo{
 func newJWTMiddleware() echo.MiddlewareFunc {
 	return middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: uuid,
-		Claims:     &jwt.Claims{StandardClaims: j.StandardClaims{ExpiresAt: 0}},
+		Claims:     &jwt.Claims{},
 	})
 }
