@@ -16,13 +16,12 @@ import (
 
 var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd")
 
-
-func onError(err error, c wserver.Context){
+func onError(err error, c wserver.Context) {
 	log.Println(err, c)
 }
 
-func middle() wserver.MiddlewareFunc{
-	return func(next wserver.HandlerFunc) wserver.HandlerFunc{
+func middle() wserver.MiddlewareFunc {
+	return func(next wserver.HandlerFunc) wserver.HandlerFunc {
 		return func(c wserver.Context) error {
 			log.Println("incoming message")
 			return next(c)
@@ -30,12 +29,12 @@ func middle() wserver.MiddlewareFunc{
 	}
 }
 
-func main(){
+func main() {
 	db, err := storage.Open(os.Getenv("PG_URL"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := db.Ping(); err !=nil{
+	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
@@ -43,12 +42,12 @@ func main(){
 	wsHandler := websocket.NewHandler(
 		websocket.Handler{DB: db,
 			Clients: websocket.NewClients(
-			make(map[string]*websocket.Client),
+				make(map[string]*websocket.Client),
 			),
-			Rooms: websocket.NewRooms(make(map[string]*werewolves.Room)),
+			Rooms:  websocket.NewRooms(make(map[string]*werewolves.Room)),
 			Secret: uuid,
 		},
-		)
+	)
 
 	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
 	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom, wsHandler.WebsocketJWT())
@@ -59,12 +58,13 @@ func main(){
 	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeVote, wsHandler.OnVote, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill, wsHandler.WebsocketJWT())
+	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote, wsHandler.WebsocketJWT())
 
 	h := http.NewHandler(
 		http.Handler{
-			DB:db,
+			DB: db,
 		},
-		)
+	)
 	e := newEcho()
 	//e.GET("/ws/:token", server.WsEndpoint)
 	g := e.Group("", newJWTMiddleware())
@@ -77,16 +77,15 @@ func main(){
 	h.Register(
 		g.Group("/api/users"),
 		http.UsersService{},
-		)
+	)
 	h.Register(
 		e.Group("/api/game"),
 		http.GameService{},
-		)
+	)
 	e.Logger.Fatal(e.Start(":7070"))
 }
 
-
-func newEcho() *echo.Echo{
+func newEcho() *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 

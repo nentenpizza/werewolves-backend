@@ -1,29 +1,35 @@
 package websocket
 
 import (
+	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 	"log"
 )
 
-func (h *handler) OnVote(ctx wserver.Context) error  {
+func (h *handler) OnVote(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
 	}
-	if client.Room() == nil{
+	if client.Room() == nil {
 		return NotInRoomRoom
 	}
 
 	event := &EventPlayerID{}
-	err := h.mapToEvent(event, ctx.Data())
-	if err != nil {
+	if err := ctx.Bind(event); err != nil {
 		return err
 	}
-	log.Println("vote", ctx.EventType(), event.PlayerID)
 	action := client.Player.Vote(event.PlayerID)
-	err = client.Room().Perform(action)
-	if err != nil {
-		return NotAllowedErr
+	if client.Room().State == werewolves.Night {
+		if err := client.Room().Perform(action, "wolves"); err != nil {
+			return NotAllowedErr
+		}
+		log.Println("night vote", ctx.EventType(), event.PlayerID)
+	} else {
+		if err := client.Room().Perform(action); err != nil {
+			return NotAllowedErr
+		}
+		log.Println("day vote", ctx.EventType(), event.PlayerID)
 	}
 	return nil
 }

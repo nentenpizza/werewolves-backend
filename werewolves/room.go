@@ -18,7 +18,7 @@ const (
 	DayVoting = "voting"
 	Night     = "night"
 	Discuss   = "discuss"
-	Prepare = "prepare"
+	Prepare   = "prepare"
 )
 
 // Duration of each phase
@@ -50,32 +50,31 @@ type Settings struct {
 // Owner is playerID to creator of room
 //
 type Room struct {
-	Owner     string  `json:"owner"`
-	Players   Players `json:"-"`
-	Users map[string]bool `json:"players"`
-	State     string  `json:"state"`
-	ticker    *time.Ticker
+	Owner      string          `json:"owner"`
+	Players    Players         `json:"-"`
+	Users      map[string]bool `json:"players"`
+	State      string          `json:"state"`
+	ticker     *time.Ticker
 	notifyDone chan bool
-	done      chan bool
-	started   bool
-	Dead      map[string]bool   `json:"dead"`
-	broadcast chan interface{}
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	OpenRoles map[string]string `json:"open_roles"`
-	Votes     map[string]uint8  `json:"votes"`
-	Settings  Settings          `json:"settings"`
-	Groups map[string][]*Player `json:"-"`
+	done       chan bool
+	started    bool
+	Dead       map[string]bool `json:"dead"`
+	broadcast  chan interface{}
+	ID         string               `json:"id"`
+	Name       string               `json:"name"`
+	OpenRoles  map[string]string    `json:"open_roles"`
+	Votes      map[string]uint8     `json:"votes"`
+	Settings   Settings             `json:"settings"`
+	Groups     map[string][]*Player `json:"-"`
 	sync.Mutex
 }
-
 
 // NewRoom constructor for Room
 // Pass empty Settings for defaults
 func NewRoom(id string, name string, players Players, settings Settings, ownerID string) *Room {
 	r := &Room{
 		Players:   players,
-		Users: make(map[string]bool),
+		Users:     make(map[string]bool),
 		Dead:      make(map[string]bool),
 		broadcast: make(chan interface{}),
 		Settings:  settings,
@@ -84,8 +83,8 @@ func NewRoom(id string, name string, players Players, settings Settings, ownerID
 		ID:        id,
 		Name:      name,
 		Owner:     ownerID,
-		State: Prepare,
-		Groups: make(map[string][]*Player),
+		State:     Prepare,
+		Groups:    make(map[string][]*Player),
 	}
 	return r
 }
@@ -163,9 +162,9 @@ func (r *Room) endVotePhase() {
 		return sortedVotes[i].Value > sortedVotes[j].Value
 	})
 
-	if sortedVotes[0].Value  == sortedVotes[1].Value  {
+	if sortedVotes[0].Value == sortedVotes[1].Value {
 		return
-	} else if sortedVotes[0].Value < uint8(len(r.Players)/2) && len(r.Players) > 2{
+	} else if sortedVotes[0].Value < uint8(len(r.Players)/2) && len(r.Players) > 2 {
 		return
 	} else {
 		p, ok := r.Players[sortedVotes[0].Key]
@@ -203,7 +202,7 @@ func (r *Room) nextState() {
 	default:
 		break
 	}
-	if len(r.Players) < MinPlayers{
+	if len(r.Players) < MinPlayers {
 		r.done <- true
 	}
 	log.Println(r.State)
@@ -212,7 +211,7 @@ func (r *Room) nextState() {
 }
 
 // Perform validates Action and performs it
-func (r *Room) 	Perform(action Action) error {
+func (r *Room) Perform(action Action, groups ...string) error {
 	r.Lock()
 	defer r.Unlock()
 	var ok bool
@@ -227,7 +226,13 @@ func (r *Room) 	Perform(action Action) error {
 	}
 	err := action.do(r)
 	if err == nil {
-		r.BroadcastEvent(action.Event)
+		if len(groups) > 0 {
+			for _, v := range groups {
+				r.doBroadcastTo(v, action.Event)
+			}
+		} else {
+			r.BroadcastEvent(action.Event)
+		}
 	}
 	log.Println(action.Name, "performed")
 	r.commitDead()
@@ -305,13 +310,13 @@ func (r *Room) defineRoles() error {
 		role := roles[i](v.ID)
 		v.Character = role
 		v.Role = reflect.TypeOf(role).Elem().Name()
-		if v.Role == "Werewolf" || v.Role == "AlphaWerewolf"{
-			r.doJoinGroup("wolves",v)
-		}else{
+		if v.Role == "Werewolf" || v.Role == "AlphaWerewolf" {
+			r.doJoinGroup("wolves", v)
+		} else {
 			r.doJoinGroup("peaceful", v)
 		}
 		v.Update <- Event{EventType: EventTypeShowRole, Data: struct {
-			Name string `json:"name"`
+			Name      string    `json:"name"`
 			Character Character `json:"character"`
 		}{Name: v.Role, Character: v.Character}}
 		i++
@@ -322,8 +327,8 @@ func (r *Room) defineRoles() error {
 func (r *Room) InGroup(groupName string, playerID string) bool {
 	group, ok := r.Groups[groupName]
 	if ok {
-		for _, p := range group{
-			if p.ID == playerID{
+		for _, p := range group {
+			if p.ID == playerID {
 				return true
 			}
 		}
@@ -331,34 +336,38 @@ func (r *Room) InGroup(groupName string, playerID string) bool {
 	return false
 }
 
-func (r *Room) JoinGroup(groupName string, p *Player)  {
+func (r *Room) JoinGroup(groupName string, p *Player) {
 	r.Lock()
 	defer r.Unlock()
 	r.doJoinGroup(groupName, p)
 
 }
 
-func (r *Room) doJoinGroup(groupName string, p *Player)  {
+func (r *Room) doJoinGroup(groupName string, p *Player) {
 	group, ok := r.Groups[groupName]
-	if ok{
+	if ok {
 		group = append(group, p)
-	}else{
+	} else {
 		r.Groups[groupName] = []*Player{p}
 	}
 }
 
-func (r *Room) BroadcastTo(groupName string, i interface{}){
+func (r *Room) BroadcastTo(groupName string, i interface{}) {
 	r.Lock()
 	defer r.Unlock()
+	r.doBroadcastTo(groupName, i)
+}
+
+func (r *Room) doBroadcastTo(groupName string, i interface{}) {
 	group, ok := r.Groups[groupName]
 	if ok {
-		for _, p := range group{
+		for _, p := range group {
 			p.Update <- i
 		}
 	}
 }
 
-func (r *Room) killPlayer(player *Player)  {
+func (r *Room) killPlayer(player *Player) {
 	player.Kill()
 	r.doJoinGroup("dead", player)
 }
@@ -371,7 +380,6 @@ func (r *Room) resetProtection() {
 		}
 	}
 }
-
 
 func (r *Room) BroadcastEvent(e interface{}) {
 	for _, p := range r.Players {

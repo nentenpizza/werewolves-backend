@@ -3,16 +3,16 @@ package websocket
 import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
-	j"github.com/nentenpizza/werewolves/jwt"
+	j "github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/wserver"
 	"log"
 )
 
 func (h *handler) WebsocketJWT() wserver.MiddlewareFunc {
-	return func (next wserver.HandlerFunc) wserver.HandlerFunc {
+	return func(next wserver.HandlerFunc) wserver.HandlerFunc {
 		return func(c wserver.Context) error {
 			tok := (c.Get("token")).(string)
-			if tok == ""{
+			if tok == "" {
 				return errors.New("token is nil")
 			}
 			tokenx, err := jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
@@ -33,12 +33,12 @@ func (h *handler) WebsocketJWT() wserver.MiddlewareFunc {
 				if client.Token.Username == "" {
 					client.Token = token
 				}
-			}else{
+			} else {
 				client = NewClient(c.Conn, token, make([]interface{}, 0), make(chan bool))
+				h.c.Write(client.Token.Username, client)
 			}
 			c.Set("client", client)
 			return next(c)
 		}
 	}
 }
-

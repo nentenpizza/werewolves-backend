@@ -11,14 +11,18 @@ const (
 	EventTypeLeaveRoom  = "leave_room"
 	EventTypeStartGame  = "start_room"
 	EventTypeVote       = werewolves.VoteAction
-	EventTypeAllRooms = "all_rooms"
+	EventTypeAllRooms   = "all_rooms"
+
 	EventTypeRoomCreated = "new_room"
+	EventTypeRoomDeleted = "room_deleted"
 
 	EventTypeDisconnected = "disconnected"
 
 	EventTypeSendMessage = "send_message"
-	EventTypeUseSkill = "use_skill"
-	EventTypeRevealRole = "reveal_role"
+	EventTypeUseSkill    = "use_skill"
+	EventTypeRevealRole  = "reveal_role"
+
+	EventTypeSendEmote = "send_emote"
 )
 
 // Event types for skills
@@ -27,15 +31,14 @@ const (
 	EventTypeDoctorHeal     = werewolves.DoctorHealAction
 )
 
-
 type Event struct {
 	Type string      `json:"event_type" mapstructure:"event_type"`
 	Data interface{} `json:"data" mapstructure:"data"`
 }
 
 type EventErr struct {
-	Type string      `json:"event_type" mapstructure:"event_type"`
-	Data interface{} `json:"data" mapstructure:"data"`
+	Type  string       `json:"event_type" mapstructure:"event_type"`
+	Data  interface{}  `json:"data" mapstructure:"data"`
 	Error *ServerError `json:"error" mapstructure:"error"`
 }
 
@@ -43,13 +46,12 @@ type EventErr struct {
 type (
 	// EventCreateRoom represents event for creating room
 	EventCreateRoom struct {
-		RoomName   string              `json:"room_name" mapstructure:"room_name"`
-		Settings   werewolves.Settings `json:"settings" mapstructure:"settings"`
+		RoomName string              `json:"room_name" mapstructure:"room_name"`
+		Settings werewolves.Settings `json:"settings" mapstructure:"settings"`
 	}
 
-
 	EventRoomPlayer struct {
-		RoomID string `json:"room_id,omitempty" mapstructure:"room_id"`
+		RoomID   string `json:"room_id,omitempty" mapstructure:"room_id"`
 		PlayerID string `json:"player_id,omitempty" mapstructure:"player_id"`
 	}
 
@@ -61,24 +63,31 @@ type (
 		Room *werewolves.Room `json:"room" mapstructure:"room"`
 	}
 
+	EventRoomDeleted struct {
+		RoomID string `json:"room_id" mapstructure:"room_id"`
+	}
 )
 
 type EventRevealRole struct {
-	Role string `json:"role" mapstructure:"role"`
+	Role     string `json:"role" mapstructure:"role"`
 	PlayerID string `json:"player_id" mapstructure:"player_id"`
 }
 
 // Events for chat
 type (
 	MessageEvent struct {
-		Text string `json:"text" mapstructure:"text"`
+		Text     string `json:"text" mapstructure:"text"`
 		Username string `json:"username,omitempty" mapstructure:"username"`
+	}
+
+	EmoteEvent struct {
+		FromID string `json:"from_id,omitempty" mapstructure:"from_id,omitempty"`
+		Emote  string `json:"emote" mapstructure:"emote"`
 	}
 )
 
 // Events for in-game stuff
 type (
-
 
 	// TargetedEvent used in all cases when you need only player_id and target_id
 	TargetedEvent struct {
@@ -91,6 +100,6 @@ type (
 	}
 )
 
-var EventsWithTypes = map[string]interface {}{
+var EventsWithTypes = map[string]interface{}{
 	EventTypeStartGame: Event{},
 }

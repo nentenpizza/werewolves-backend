@@ -2,10 +2,12 @@ package wserver
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
+	j "github.com/nentenpizza/werewolves/jwt"
 	"log"
 	"net/http"
 )
@@ -26,8 +28,8 @@ type HandlerFunc func(ctx Context) error
 type OnErrorFunc func(error, Context)
 
 type Update struct {
-	EventType string `json:"event_type" mapstructure:"event_type"`
-	Data interface{} `json:"data" mapstructure:"data"`
+	EventType string      `json:"event_type" mapstructure:"event_type"`
+	Data      interface{} `json:"data" mapstructure:"data"`
 }
 
 type Settings struct {
@@ -35,30 +37,30 @@ type Settings struct {
 	Secret []byte
 
 	// if true, Context.Get("token") will return token
-	UseJWT bool
+	UseJWT  bool
 	OnError OnErrorFunc
-	Claims jwt.Claims
+	Claims  jwt.Claims
 }
 
 type Server struct {
-	OnError OnErrorFunc
+	OnError  OnErrorFunc
 	handlers map[interface{}]HandlerFunc
-	useJWT bool
-	secret []byte
-	claims jwt.Claims
+	useJWT   bool
+	secret   []byte
+	claims   jwt.Claims
 }
 
-func NewServer(s Settings) *Server{
-	upgrader.CheckOrigin = func(r *http.Request) bool {return true}
-	if s.UseJWT && len(s.Secret) < 1{
+func NewServer(s Settings) *Server {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	if s.UseJWT && len(s.Secret) < 1 {
 		panic("wserver: secret can not be empty string if UseJWT enabled")
 	}
 	return &Server{
-		useJWT: s.UseJWT,
-		OnError: s.OnError,
+		useJWT:   s.UseJWT,
+		OnError:  s.OnError,
 		handlers: make(map[interface{}]HandlerFunc),
-		secret: s.Secret,
-		claims: s.Claims,
+		secret:   s.Secret,
+		claims:   s.Claims,
 	}
 }
 
@@ -69,7 +71,7 @@ func applyMiddleware(h HandlerFunc, middleware ...MiddlewareFunc) HandlerFunc {
 	return h
 }
 
-func (s *Server) Handle(eventType interface{}, h HandlerFunc, middleware ...MiddlewareFunc)  {
+func (s *Server) Handle(eventType interface{}, h HandlerFunc, middleware ...MiddlewareFunc) {
 	switch eventType.(type) {
 	case int:
 		break
@@ -82,12 +84,12 @@ func (s *Server) Handle(eventType interface{}, h HandlerFunc, middleware ...Midd
 	s.handlers[eventType] = h
 }
 
-func (s *Server) runHandler (h HandlerFunc, c Context) {
-	f := func(){
-		if err := h(c); err != nil{
+func (s *Server) runHandler(h HandlerFunc, c Context) {
+	f := func() {
+		if err := h(c); err != nil {
 			if s.OnError != nil {
 				s.OnError(err, c)
-			}else{
+			} else {
 				log.Println(err)
 			}
 		}
@@ -104,7 +106,15 @@ func (s *Server) Listen(c echo.Context) error {
 		if tok == "" {
 			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
 		}
-
+		tokenx, err := jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
+			return s.secret, nil
+		})
+		if err != nil {
+			return err
+		}
+		if !tokenx.Valid {
+			return errors.New("wserver: invalid token")
+		}
 
 	}
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
@@ -115,13 +125,13 @@ func (s *Server) Listen(c echo.Context) error {
 	return nil
 }
 
-func (s *Server) reader(conn *websocket.Conn, token string){
+func (s *Server) reader(conn *websocket.Conn, token string) {
 	ctx := Context{Conn: conn, storage: make(map[string]interface{})}
 	ctx.Set("token", token)
 	s.runOnConnectHandler(ctx)
 	for {
 		ctx := Context{Conn: conn, storage: make(map[string]interface{})}
-		ctx.Set("token",token)
+		ctx.Set("token", token)
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			s.OnError(err, ctx)
@@ -135,14 +145,14 @@ func (s *Server) reader(conn *websocket.Conn, token string){
 
 func (s Server) runOnDisconnectHandler(ctx Context) {
 	h, ok := s.handlers[OnDisconnect]
-	if ok{
+	if ok {
 		s.runHandler(h, ctx)
 	}
 }
 
-func (s *Server) runOnConnectHandler(ctx Context)  {
+func (s *Server) runOnConnectHandler(ctx Context) {
 	h, ok := s.handlers[OnConnect]
-	if ok{
+	if ok {
 		s.runHandler(h, ctx)
 	}
 }
@@ -150,7 +160,7 @@ func (s *Server) runOnConnectHandler(ctx Context)  {
 func (s *Server) processUpdate(msg []byte, c Context) {
 	u := &Update{}
 	err := json.Unmarshal(msg, u)
-	if err != nil{
+	if err != nil {
 		if s.OnError != nil {
 			s.OnError(err, c)
 		}
@@ -160,9 +170,9 @@ func (s *Server) processUpdate(msg []byte, c Context) {
 	handler, ok := s.handlers[u.EventType]
 	if !ok {
 		h, ok := s.handlers[OnOther]
-		if ok{
+		if ok {
 			handler = h
-		}else {
+		} else {
 			return
 		}
 	}

@@ -1,4 +1,6 @@
-create database werewolves;
+-- +goose Up
+
+-- users
 
 create table users(
     created_at timestamp not null default now(),
