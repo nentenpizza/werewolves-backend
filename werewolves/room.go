@@ -32,6 +32,10 @@ const (
 	MinPlayers = 2 // 6
 )
 
+type RoomResult struct {
+	WonGroup string `json:"won_group,omitempty" mapstructure:"won_group,omitempty"`
+}
+
 // Settings for Room, not required
 type Settings struct {
 	OpenRolesOnDeath bool `json:"open_roles_on_death"`
@@ -50,22 +54,23 @@ type Settings struct {
 // Owner is playerID to creator of room
 //
 type Room struct {
-	Owner      string          `json:"owner"`
-	Players    Players         `json:"-"`
-	Users      map[string]bool `json:"players"`
-	State      string          `json:"state"`
-	ticker     *time.Ticker
-	notifyDone chan bool
-	done       chan bool
-	started    bool
-	Dead       map[string]bool `json:"dead"`
-	broadcast  chan interface{}
-	ID         string               `json:"id"`
-	Name       string               `json:"name"`
-	OpenRoles  map[string]string    `json:"open_roles"`
-	Votes      map[string]uint8     `json:"votes"`
-	Settings   Settings             `json:"settings"`
-	Groups     map[string][]*Player `json:"-"`
+	Owner       string          `json:"owner"`
+	Players     Players         `json:"-"`
+	Users       map[string]bool `json:"players"`
+	State       string          `json:"state"`
+	ticker      *time.Ticker
+	NotifyDone  chan *RoomResult `json:"-"`
+	done        chan *RoomResult
+	started     bool
+	Dead        map[string]bool `json:"dead"`
+	broadcast   chan interface{}
+	ID          string                        `json:"id"`
+	Name        string                        `json:"name"`
+	OpenRoles   map[string]string             `json:"open_roles"`
+	Votes       map[string]uint8              `json:"votes"`
+	Settings    Settings                      `json:"settings"`
+	Groups      map[string]map[string]*Player `json:"-"`
+	AliveGroups map[string]map[string]*Player `json:"-"`
 	sync.Mutex
 }
 
@@ -73,24 +78,23 @@ type Room struct {
 // Pass empty Settings for defaults
 func NewRoom(id string, name string, players Players, settings Settings, ownerID string) *Room {
 	r := &Room{
-		Players:   players,
-		Users:     make(map[string]bool),
-		Dead:      make(map[string]bool),
-		broadcast: make(chan interface{}),
-		Settings:  settings,
-		OpenRoles: make(map[string]string),
-		Votes:     make(map[string]uint8),
-		ID:        id,
-		Name:      name,
-		Owner:     ownerID,
-		State:     Prepare,
-		Groups:    make(map[string][]*Player),
+		Players:     players,
+		Users:       make(map[string]bool),
+		Dead:        make(map[string]bool),
+		broadcast:   make(chan interface{}),
+		Settings:    settings,
+		OpenRoles:   make(map[string]string),
+		Votes:       make(map[string]uint8),
+		ID:          id,
+		Name:        name,
+		Owner:       ownerID,
+		State:       Prepare,
+		Groups:      make(map[string]map[string]*Player),
+		AliveGroups: make(map[string]map[string]*Player),
+		done:        make(chan *RoomResult, 1),
+		NotifyDone:  make(chan *RoomResult, 1),
 	}
 	return r
-}
-
-func (r *Room) Done() chan bool {
-	return r.notifyDone
 }
 
 func (r *Room) init() error {
@@ -102,7 +106,6 @@ func (r *Room) init() error {
 		return err
 	}
 	r.State = Discuss
-	r.done = make(chan bool, 1)
 	r.ticker = time.NewTicker(PhaseLength)
 	for k := range r.Players {
 		r.Votes[k] = 0
@@ -137,9 +140,9 @@ func (r *Room) Start() error {
 func (r *Room) runCycle() {
 	for {
 		select {
-		case <-r.done:
+		case e := <-r.done:
 			r.ticker.Stop()
-			r.notifyDone <- true
+			r.NotifyDone <- e
 			return
 
 		case <-r.ticker.C:
@@ -203,7 +206,7 @@ func (r *Room) nextState() {
 		break
 	}
 	if len(r.Players) < MinPlayers {
-		r.done <- true
+		r.done <- nil
 	}
 	log.Println(r.State)
 	ev := Event{EventTypeStateChanged, r}
@@ -312,8 +315,10 @@ func (r *Room) defineRoles() error {
 		v.Role = reflect.TypeOf(role).Elem().Name()
 		if v.Role == "Werewolf" || v.Role == "AlphaWerewolf" {
 			r.doJoinGroup("wolves", v)
+			v.Groups = append(v.Groups, "wolves")
 		} else {
 			r.doJoinGroup("peaceful", v)
+			v.Groups = append(v.Groups, "peaceful")
 		}
 		v.Update <- Event{EventType: EventTypeShowRole, Data: struct {
 			Name      string    `json:"name"`
@@ -346,9 +351,28 @@ func (r *Room) JoinGroup(groupName string, p *Player) {
 func (r *Room) doJoinGroup(groupName string, p *Player) {
 	group, ok := r.Groups[groupName]
 	if ok {
-		group = append(group, p)
+		group[p.ID] = p
 	} else {
-		r.Groups[groupName] = []*Player{p}
+		r.Groups[groupName] = map[string]*Player{p.ID: p}
+	}
+	if groupName != "dead" {
+		r.doJoinAliveGroup(groupName, p)
+	}
+}
+
+func (r *Room) doJoinAliveGroup(groupName string, p *Player) {
+	group, ok := r.AliveGroups[groupName]
+	if ok {
+		group[p.ID] = p
+	} else {
+		r.AliveGroups[groupName] = map[string]*Player{p.ID: p}
+	}
+}
+
+func (r *Room) removeFromAliveGroup(groupName string, p *Player) {
+	group, ok := r.AliveGroups[groupName]
+	if ok {
+		delete(group, p.ID)
 	}
 }
 
@@ -368,8 +392,21 @@ func (r *Room) doBroadcastTo(groupName string, i interface{}) {
 }
 
 func (r *Room) killPlayer(player *Player) {
+	wolves, ok := r.AliveGroups["wolves"]
+	peaceful, okk := r.AliveGroups["peaceful"]
 	player.Kill()
+	for _, v := range player.Groups {
+		r.removeFromAliveGroup(v, player)
+	}
 	r.doJoinGroup("dead", player)
+	if ok && okk {
+		if len(wolves) >= len(peaceful) {
+			r.done <- &RoomResult{WonGroup: "wolves"}
+		}
+		if len(wolves) <= 0 {
+			r.done <- &RoomResult{WonGroup: "peaceful"}
+		}
+	}
 }
 
 // resets all doctor and other protection

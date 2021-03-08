@@ -12,7 +12,7 @@ import (
 
 func (s *Server) WsEndpoint(c echo.Context) error {
 	t := c.Param("token")
-	if t == ""{
+	if t == "" {
 		return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
 	}
 	tokenx, err := j.ParseWithClaims(t, &jwt.Claims{}, func(token *j.Token) (interface{}, error) {
@@ -22,7 +22,7 @@ func (s *Server) WsEndpoint(c echo.Context) error {
 		return err
 	}
 
-	if !tokenx.Valid{
+	if !tokenx.Valid {
 		return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
 	}
 
@@ -34,7 +34,6 @@ func (s *Server) WsEndpoint(c echo.Context) error {
 	go s.WsReader(conn, token)
 	return nil
 }
-
 
 func (s *Server) AllRooms(c echo.Context) error {
 	return c.JSON(http.StatusOK, s.Rooms)

@@ -65,6 +65,13 @@ func (h *handler) OnStartGame(ctx wserver.Context) error {
 	if err != nil {
 		return RoomStartErr
 	}
+	go func() {
+		select {
+		case e := <-room.NotifyDone:
+			h.calculateResults(e, room)
+			return
+		}
+	}()
 	return nil
 }
 
@@ -129,16 +136,20 @@ func (h *handler) OnLeaveRoom(ctx wserver.Context) error {
 		client.SetRoom(nil)
 		client.quit <- true
 		if len(room.Players) <= 0 {
-			h.r.Delete(room.ID)
-			go func() {
-				h.c.Lock()
-				for _, c := range h.c.clients {
-					c.WriteJSON(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: room.ID}})
-				}
-				h.c.Unlock()
-			}()
+			h.deleteRoom(room.ID)
 		}
 	}
 	client.WriteJSON(ctx.Update)
 	return nil
+}
+
+func (h *handler) deleteRoom(roomID string) {
+	h.r.Delete(roomID)
+	go func() {
+		h.c.Lock()
+		for _, c := range h.c.clients {
+			c.WriteJSON(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: roomID}})
+		}
+		h.c.Unlock()
+	}()
 }

@@ -21,7 +21,6 @@ const (
 	EventTypeDoctorHeal     = werewolves.DoctorHealAction
 )
 
-
 type Event struct {
 	Type string      `json:"event_type"`
 	Data interface{} `json:"data"`
@@ -31,8 +30,8 @@ type Event struct {
 type (
 	// EventCreateRoom represents event for creating room
 	EventCreateRoom struct {
-		RoomName   string              `json:"room_name"`
-		Settings   werewolves.Settings `json:"settings"`
+		RoomName string              `json:"room_name"`
+		Settings werewolves.Settings `json:"settings"`
 	}
 
 	// EventLeaveRoom represents event for leaving room
@@ -41,25 +40,22 @@ type (
 		RoomID   string `json:"room_id,omitempty"`
 	}
 
-
 	EventJoinRoom struct {
-		RoomID string `json:"room_id"`
+		RoomID   string `json:"room_id"`
 		PlayerID string `json:"player_id,omitempty"`
 	}
-
 )
 
 // Events for chat
 type (
 	MessageEvent struct {
-		Text string `json:"text"`
+		Text     string `json:"text"`
 		Username string `json:"username,omitempty"`
 	}
 )
 
 // Events for in-game stuff
 type (
-
 
 	// TargetedEvent used in all cases when you need only player_id and target_id
 	TargetedEvent struct {
@@ -68,6 +64,6 @@ type (
 	}
 )
 
-var EventsWithTypes = map[string]interface {}{
+var EventsWithTypes = map[string]interface{}{
 	EventTypeStartGame: Event{},
 }

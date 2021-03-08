@@ -1,9 +1,9 @@
-	//		 __      _____ _____   ___  _______   ___
-		//	| |    |  ___|  __ \ / _ \/  __ \ \ / / |
-		//	| |    | |__ | |  \// /_\ \ /  \/\ V /| |
-		//	| |    |  __|| | __ |  _  | |     \ / | |
-		//	| |____| |___| |_\ \| | | | \__/\ | | |_|
-		//	\_____/\____/ \____/\_| |_/\____/ \_/ (_)
+//		 __      _____ _____   ___  _______   ___
+//	| |    |  ___|  __ \ / _ \/  __ \ \ / / |
+//	| |    | |__ | |  \// /_\ \ /  \/\ V /| |
+//	| |    |  __|| | __ |  _  | |     \ / | |
+//	| |____| |___| |_\ \| | | | \__/\ | | |_|
+//	\_____/\____/ \____/\_| |_/\____/ \_/ (_)
 package server
 
 import (
@@ -39,11 +39,11 @@ type Client struct {
 	sync.Mutex
 	conn *websocket.Conn
 	*werewolves.Player
-	room *werewolves.Room
-	AFK bool
-	Token jwt.Claims
+	room      *werewolves.Room
+	AFK       bool
+	Token     jwt.Claims
 	Unreached []interface{}
-	quit chan bool
+	quit      chan bool
 }
 
 func (c *Client) Conn() *websocket.Conn {
@@ -52,35 +52,35 @@ func (c *Client) Conn() *websocket.Conn {
 	return c.conn
 }
 
-func (c *Client) UpdateConn(conn *websocket.Conn){
+func (c *Client) UpdateConn(conn *websocket.Conn) {
 	c.Lock()
 	defer c.Unlock()
 	c.conn = conn
 }
 
-func (c *Client) SetRoom(r *werewolves.Room){
+func (c *Client) SetRoom(r *werewolves.Room) {
 	c.Lock()
 	defer c.Unlock()
 	c.room = r
 }
-func (c *Client) SetChar(plr *werewolves.Player){
+func (c *Client) SetChar(plr *werewolves.Player) {
 	c.Lock()
 	defer c.Unlock()
 	c.Player = plr
 }
 
-func (c *Client) Room()*werewolves.Room{
+func (c *Client) Room() *werewolves.Room {
 	c.Lock()
 	defer c.Unlock()
 	return c.room
 }
-func (c *Client) Char() *werewolves.Player{
+func (c *Client) Char() *werewolves.Player {
 	c.Lock()
 	defer c.Unlock()
 	return c.Player
 }
 
-func (c *Client) ListenRoom(){
+func (c *Client) ListenRoom() {
 	for {
 		if c.Player != nil {
 			select {
@@ -90,10 +90,10 @@ func (c *Client) ListenRoom(){
 				} else {
 					return
 				}
-			case <- c.quit:
+			case <-c.quit:
 				return
 			}
-		}else{
+		} else {
 			return
 		}
 	}
@@ -103,16 +103,16 @@ func (c *Client) WriteJSON(i interface{}) error {
 	c.Lock()
 	defer c.Unlock()
 	err := c.conn.WriteJSON(i)
-	if err != nil{
+	if err != nil {
 		c.Unreached = append(c.Unreached, i)
 		log.Println(c.Token.Username, "unreached", i)
 	}
 	return err
 }
 
-func (c *Client) SendUnreached(){
-	if len(c.Unreached) > 0{
-		for _, e := range c.Unreached{
+func (c *Client) SendUnreached() {
+	if len(c.Unreached) > 0 {
+		for _, e := range c.Unreached {
 			c.WriteJSON(e)
 			log.Println("sent unreached to", c.Token.Username, "|", e)
 		}
@@ -125,7 +125,7 @@ type Rooms struct {
 	sync.Mutex
 }
 
-func (m *Rooms) Write(key string, value *werewolves.Room)  {
+func (m *Rooms) Write(key string, value *werewolves.Room) {
 	m.Lock()
 	defer m.Unlock()
 	m.rooms[key] = value
@@ -143,7 +143,7 @@ func (m *Rooms) Delete(key string) {
 	delete(m.rooms, key)
 }
 
-func (m *Rooms) MarshalJSON() ([]byte, error){
+func (m *Rooms) MarshalJSON() ([]byte, error) {
 	j, err := json.Marshal(m.rooms)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ type Clients struct {
 	sync.Mutex
 }
 
-func (m *Clients) Write(key string, value *Client)  {
+func (m *Clients) Write(key string, value *Client) {
 	m.Lock()
 	defer m.Unlock()
 	m.clients[key] = value
@@ -178,8 +178,7 @@ func (m *Clients) Delete(key string) {
 	delete(m.clients, key)
 }
 
-
-func (m *Clients) MarshalJSON() ([]byte, error){
+func (m *Clients) MarshalJSON() ([]byte, error) {
 	j, err := json.Marshal(m.clients)
 	if err != nil {
 		return nil, err
@@ -193,14 +192,14 @@ func NewClients(c map[string]*Client) *Clients {
 
 // Server represents a game server which talks with game
 type Server struct {
-	db *storage.DB
-	Rooms       *Rooms
+	db      *storage.DB
+	Rooms   *Rooms
 	Clients *Clients
-	Secret []byte
+	Secret  []byte
 }
 
-func (s *Server) REGISTER(db *storage.DB, g *echo.Group)  {
-	for i:=0;i<5;i++ {
+func (s *Server) REGISTER(db *storage.DB, g *echo.Group) {
+	for i := 0; i < 5; i++ {
 		room := werewolves.NewRoom(strconv.Itoa(rand.Intn(100)), strconv.Itoa(rand.Intn(100)), werewolves.Players{}, werewolves.Settings{}, strconv.Itoa(rand.Intn(100)))
 		s.Rooms.Write(room.ID, room)
 	}
@@ -221,7 +220,7 @@ func (s *Server) WsReader(conn *websocket.Conn, token jwt.Claims) {
 	if client == nil {
 		client = &Client{conn: conn, Token: token, AFK: false, quit: make(chan bool, 1)}
 		s.Clients.Write(token.Username, client)
-	}else {
+	} else {
 		log.Printf("reconnected %s", token.Username)
 		client.AFK = false
 		client.Token = token
@@ -237,7 +236,7 @@ func (s *Server) WsReader(conn *websocket.Conn, token jwt.Claims) {
 			log.Println(err)
 			log.Printf("waiting for %s", token.Username)
 			client.AFK = true
-			time.AfterFunc(reconnectTime, func(){
+			time.AfterFunc(reconnectTime, func() {
 				if client.AFK == true {
 					s.Disconnect(client)
 				}
@@ -259,10 +258,9 @@ func (s *Server) WsReader(conn *websocket.Conn, token jwt.Claims) {
 	}
 }
 
-
-func(s *Server) Disconnect(client *Client){
-	client.quit<-true
-	if client.Room() != nil{
+func (s *Server) Disconnect(client *Client) {
+	client.quit <- true
+	if client.Room() != nil {
 		err := client.Room().RemovePlayer(client.Token.Username)
 		log.Println(err)
 	}
@@ -306,7 +304,7 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 		if err != nil {
 			return err
 		}
-		err = s.handleJoinRoom(&ev,event, client)
+		err = s.handleJoinRoom(&ev, event, client)
 		if err != nil {
 			return err
 		}
@@ -317,7 +315,7 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 		if err != nil {
 			return err
 		}
-		err = s.handleMessage(&ev, event, client)	
+		err = s.handleMessage(&ev, event, client)
 		if err != nil {
 			return err
 		}
@@ -326,7 +324,7 @@ func (s *Server) HandleEvent(event *Event, client *Client) error {
 }
 
 func (s *Server) handleMessage(event *MessageEvent, ev *Event, client *Client) error {
-	if client.Room() != nil{
+	if client.Room() != nil {
 		event.Username = client.Token.Username
 		ev.Data = event
 		client.Room().BroadcastEvent(ev)
@@ -334,19 +332,18 @@ func (s *Server) handleMessage(event *MessageEvent, ev *Event, client *Client) e
 	return nil
 }
 
-
-func (s *Server) handleCreateRoom(event *EventCreateRoom,client *Client) error {
+func (s *Server) handleCreateRoom(event *EventCreateRoom, client *Client) error {
 	c := s.Clients.Read(client.Token.Username)
-	if c == nil{
+	if c == nil {
 		return s.serverError(websocket2.PlayerNotFoundErr, EventTypeCreateRoom)
 	}
-	if c.Room() != nil{
+	if c.Room() != nil {
 		return s.serverError(websocket2.AlreadyInRoomErr, EventTypeCreateRoom)
 	}
 	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
 	roomID := uuid.New().String()
 	room := werewolves.NewRoom(roomID, event.RoomName, werewolves.Players{}, event.Settings, client.Token.Username)
-	s.Rooms.Write(room.ID,room)
+	s.Rooms.Write(room.ID, room)
 	err := room.AddPlayer(player)
 	if err != nil {
 		return err
@@ -359,11 +356,8 @@ func (s *Server) handleCreateRoom(event *EventCreateRoom,client *Client) error {
 		return err
 	}
 
-
-
 	return nil
 }
-
 
 func (s *Server) handleLeaveRoom(ev *Event, client *Client) error {
 	if client.Room() != nil {
@@ -379,7 +373,7 @@ func (s *Server) handleLeaveRoom(ev *Event, client *Client) error {
 
 func (s *Server) handleStartGame(client *Client) error {
 	room := client.Room()
-	if room == nil{
+	if room == nil {
 		return s.serverError(websocket2.NotInRoomRoom, EventTypeStartGame)
 	}
 	if client.Token.Username != room.Owner {
@@ -404,7 +398,7 @@ func (s *Server) handleJoinRoom(event *EventJoinRoom, ev *Event, client *Client)
 	if room == nil {
 		return s.serverError(websocket2.RoomNotExistsErr, EventTypeJoinRoom)
 	}
-	if room.Started(){
+	if room.Started() {
 		return s.serverError(websocket2.RoomStartedErr, EventTypeJoinRoom)
 	}
 	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
