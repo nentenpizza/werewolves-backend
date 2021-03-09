@@ -68,7 +68,7 @@ func (h *handler) OnStartGame(ctx wserver.Context) error {
 	go func() {
 		select {
 		case e := <-room.NotifyDone:
-			h.calculateResults(e, room)
+			h.endGame(e, room)
 			return
 		}
 	}()
@@ -137,6 +137,7 @@ func (h *handler) OnLeaveRoom(ctx wserver.Context) error {
 		client.quit <- true
 		if len(room.Players) <= 0 {
 			h.deleteRoom(room.ID)
+			h.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: room.ID}})
 		}
 	}
 	client.WriteJSON(ctx.Update)
@@ -145,10 +146,13 @@ func (h *handler) OnLeaveRoom(ctx wserver.Context) error {
 
 func (h *handler) deleteRoom(roomID string) {
 	h.r.Delete(roomID)
+}
+
+func (h handler) broadcastToClients(e interface{}) {
 	go func() {
 		h.c.Lock()
 		for _, c := range h.c.clients {
-			c.WriteJSON(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: roomID}})
+			c.WriteJSON(e)
 		}
 		h.c.Unlock()
 	}()

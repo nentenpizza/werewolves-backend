@@ -5,11 +5,11 @@ import (
 	"math/rand"
 )
 
-func (h *handler) calculateResults(e *werewolves.RoomResult, room *werewolves.Room) {
+func (h *handler) endGame(e *werewolves.RoomResult, room *werewolves.Room) {
 	var loseGroup map[string]*werewolves.Player
-	group, ok := room.Groups[e.WonGroup]
+	wonGroup, ok := room.Groups[e.WonGroup]
 	if ok {
-		for _, p := range group {
+		for _, p := range wonGroup {
 			user, err := h.db.Users.ByUsername(p.Name)
 			if err != nil {
 				continue
@@ -35,6 +35,7 @@ func (h *handler) calculateResults(e *werewolves.RoomResult, room *werewolves.Ro
 		}
 	}
 	h.deleteRoom(room.ID)
+	h.broadcastToClients(Event{Type: EventTypeEndGame, Data: EventEndGame{WonGroup: wonGroup, LoseGroup: loseGroup, XP: 228}})
 	room = nil
 	return
 }

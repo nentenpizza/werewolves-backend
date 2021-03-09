@@ -15,6 +15,7 @@ const (
 
 	EventTypeRoomCreated = "new_room"
 	EventTypeRoomDeleted = "room_deleted"
+	EventTypeEndGame     = "end_game"
 
 	EventTypeDisconnected = "disconnected"
 
@@ -71,6 +72,14 @@ type (
 type EventRevealRole struct {
 	Role     string `json:"role" mapstructure:"role"`
 	PlayerID string `json:"player_id" mapstructure:"player_id"`
+}
+
+type EventEndGame struct {
+	WonGroup  map[string]*werewolves.Player `json:"won" mapstructure:"won"`
+	LoseGroup map[string]*werewolves.Player `json:"lose" mapstructure:"lose"`
+
+	// XP is the amount of experience the player received for this game
+	XP int `json:"XP" mapstructure:"XP"`
 }
 
 // Events for chat
