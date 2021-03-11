@@ -18,6 +18,7 @@ const (
 	EventTypeEndGame     = "end_game"
 
 	EventTypeDisconnected = "disconnected"
+	EventTypeNotInGame    = "not_in_game"
 
 	EventTypeSendMessage = "send_message"
 	EventTypeUseSkill    = "use_skill"

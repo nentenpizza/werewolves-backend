@@ -65,6 +65,7 @@ func (h *handler) OnStartGame(ctx wserver.Context) error {
 	if err != nil {
 		return RoomStartErr
 	}
+	h.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: &EventRoomDeleted{RoomID: room.ID}})
 	go func() {
 		select {
 		case e := <-room.NotifyDone:
