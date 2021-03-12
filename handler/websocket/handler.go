@@ -67,6 +67,10 @@ type handler struct {
 func NewHandler(h Handler) *handler {
 	for i := 0; i < 5; i++ {
 		room := werewolves.NewRoom(strconv.Itoa(rand.Intn(100)), strconv.Itoa(rand.Intn(100)), werewolves.Players{}, werewolves.Settings{}, strconv.Itoa(rand.Intn(100)))
+		for i := 0; i < 5; i++ {
+			player := werewolves.NewPlayer("patau", "dodik")
+			room.AddPlayer(player)
+		}
 		h.Rooms.Write(room.ID, room)
 	}
 	return &handler{

@@ -18,9 +18,14 @@ func (h *handler) OnMessage(ctx wserver.Context) error {
 		if client.Room() != nil {
 			event.Username = client.Token.Username
 			ctx.Update.Data = event
-			if client.Player.Character.HP() <= 0 {
-				client.Room().BroadcastTo("dead", ctx.Update)
-				return nil
+			if len(event.Text) > 160 {
+				return NotAllowedErr
+			}
+			if client.Player.Character != nil {
+				if client.Player.Character.HP() <= 0 {
+					client.Room().BroadcastTo("dead", ctx.Update)
+					return nil
+				}
 			}
 			if client.Room().State != werewolves.Night {
 				client.Room().BroadcastEvent(ctx.Update)

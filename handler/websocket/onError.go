@@ -8,21 +8,21 @@ import (
 func (h *handler) OnError(err error, ctx wserver.Context) {
 	client, ok := ctx.Get("client").(*Client)
 	if ok {
-		if err != nil{
+		if err != nil {
 			if client.Player != nil {
-				log.Println(client.Name, client.Role, err)
-			}else{
-				log.Println(client, err)
+				log.Println(client.Name, client.Role, err, err.Error())
+			} else {
+				log.Println(client, err, err.Error())
 			}
 
-		e, k := err.(*ServerError)
-		if k {
-			client.WriteJSON(EventErr{Type: ctx.EventType(), Data: ctx.Data(), Error: e})
-		}
+			e, k := err.(*ServerError)
+			if k {
+				client.WriteJSON(EventErr{Type: ctx.EventType(), Data: ctx.Data(), Error: e})
+			}
 		}
 		return
 	}
-	if err != nil{
+	if err != nil {
 		log.Println(err, ctx)
 	}
 }

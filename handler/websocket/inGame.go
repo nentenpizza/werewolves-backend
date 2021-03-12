@@ -19,6 +19,7 @@ func (h *handler) OnVote(ctx wserver.Context) error {
 	if err := ctx.Bind(event); err != nil {
 		return err
 	}
+	log.Println(event.PlayerID)
 	action := client.Player.Vote(event.PlayerID)
 	if client.Room().State == werewolves.Night {
 		if err := client.Room().Perform(action, "wolves"); err != nil {

@@ -28,7 +28,7 @@ const (
 
 // Capacity of room
 const (
-	MaxPlayers = 10
+	MaxPlayers = 12
 	MinPlayers = 2 // 6
 )
 
@@ -172,7 +172,7 @@ func (r *Room) endVotePhase() {
 	} else {
 		p, ok := r.Players[sortedVotes[0].Key]
 		if ok {
-			r.killPlayer(p)
+			r.doKillPlayer(p)
 		}
 	}
 
@@ -246,7 +246,7 @@ func (r *Room) Perform(action Action, groups ...string) error {
 func (r *Room) commitDead() {
 	for _, p := range r.Players {
 		if p.Character.IsDead() {
-			r.killPlayer(p)
+			r.doKillPlayer(p)
 			if r.Settings.OpenRolesOnDeath {
 				r.OpenRoles[p.ID] = p.Role
 			}
@@ -262,6 +262,7 @@ func (r *Room) AddPlayer(p *Player) error {
 		r.Players[p.ID] = p
 		r.Users[p.Name] = true
 		p.Room = r
+
 	} else {
 		return errors.New("game: can't add player to started room")
 	}
@@ -282,7 +283,7 @@ func (r *Room) RemovePlayer(playerID string) error {
 	if !r.started {
 		delete(r.Players, p.ID)
 	} else {
-		r.killPlayer(p)
+		r.doKillPlayer(p)
 		delete(r.Players, p.ID)
 		kill := TargetedEvent{TargetID: p.ID}
 		r.BroadcastEvent(Event{EventType: ExecutionAction, Data: kill})
@@ -391,7 +392,13 @@ func (r *Room) doBroadcastTo(groupName string, i interface{}) {
 	}
 }
 
-func (r *Room) killPlayer(player *Player) {
+func (r *Room) KillPlayer(player *Player) {
+	r.Lock()
+	defer r.Unlock()
+	r.doKillPlayer(player)
+}
+
+func (r *Room) doKillPlayer(player *Player) {
 	wolves, ok := r.AliveGroups["wolves"]
 	peaceful, okk := r.AliveGroups["peaceful"]
 	player.Kill()

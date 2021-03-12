@@ -8,16 +8,16 @@ var rolesMap = map[int][]func(parentID string) Character{
 	3:  {newVillager, newConstable, newWerewolf},
 	4:  {newConstable, newWerewolf, newVillager, newVillager},
 	5:  {newVillager, newWerewolf, newVillager, newVillager, newConstable},
-	6:  {newVillager, newVillager, newConstable, newWerewolf, newVillager, newVillager},
+	6:  {newVillager, newAlphaWerewolf, newVillager, newVillager, newVillager, newVillager},
 	7:  {newConstable, newConstable, newWerewolf, newVillager, newVillager, newVillager, newConstable},
 	8:  {newWerewolf, newConstable, newWerewolf, newVillager, newVillager, newVillager, newVillager, newConstable},
 	9:  {newWerewolf, newDoctor, newWerewolf, newPsychic, newVillager, newVillager, newVillager, newVillager, newConstable},
-	10: {newAlphaWerewolf, newWerewolf, newWerewolf, newPsychic, newFool, newVillager, newVillager, newVillager, newVillager, newConstable},
-	11: {newAlphaWerewolf, newWerewolf, newWerewolf, newPsychic, newFool, newVillager, newVillager, newVillager, newVillager,newVillager, newConstable},
-	12: {newAlphaWerewolf, newWerewolf, newWerewolf, newWerewolf ,newPsychic, newFool, newVillager, newVillager, newVillager,newVillager,newVillager, newConstable},
+	10: {newWerewolf, newAlphaWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager, newConstable},
+	11: {newVillager, newAlphaWerewolf, newWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager},
+	12: {newVillager, newAlphaWerewolf, newWerewolf, newWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager},
 }
 
-type CharSettings struct{
+type CharSettings struct {
 	parentID string
 }
 

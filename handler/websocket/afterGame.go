@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"github.com/nentenpizza/werewolves/werewolves"
+	"math"
 	"math/rand"
 )
 
@@ -19,7 +20,7 @@ func (h *handler) endGame(e *werewolves.RoomResult, room *werewolves.Room) error
 			if err != nil {
 				continue
 			}
-			xp := rand.Intn(1000)
+			xp := int(math.Max(500, float64(rand.Intn(1000))))
 			user.XP += int64(xp)
 			user.Wins++
 			p.Update <- &Event{Type: EventTypeEndGame, Data: EventEndGame{WonGroup: wonGroup, LoseGroup: loseGroup, XP: xp}}
