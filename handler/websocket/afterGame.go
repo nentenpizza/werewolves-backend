@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"errors"
 	"github.com/nentenpizza/werewolves/werewolves"
 	"math"
 	"math/rand"
@@ -9,6 +10,9 @@ import (
 func (h *handler) endGame(e *werewolves.RoomResult, room *werewolves.Room) error {
 	var loseGroup map[string]*werewolves.Player
 	wonGroup, ok := room.Groups[e.WonGroup]
+	if !ok {
+		return errors.New("websocket: wonGroup not found")
+	}
 	if e.WonGroup == "wolves" {
 		loseGroup, ok = room.Groups["peaceful"]
 	} else {

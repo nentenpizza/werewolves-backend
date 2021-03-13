@@ -176,7 +176,6 @@ func (r *Room) endVotePhase() {
 		}
 	}
 
-	r.resetVotes()
 }
 
 func (r *Room) resetVotes() {
@@ -198,9 +197,11 @@ func (r *Room) nextState() {
 	case DayVoting:
 		r.State = Night
 		r.endVotePhase()
+		r.resetVotes()
 	case Night:
 		r.State = Discuss
 		r.endVotePhase()
+		r.resetVotes()
 		r.resetProtection()
 	default:
 		break
