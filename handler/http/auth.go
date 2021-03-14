@@ -8,6 +8,7 @@ import (
 	"github.com/nentenpizza/werewolves/storage"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,7 @@ func (s AuthService) Register(c echo.Context) error {
 	var form struct {
 		Email    string `json:"email" validate:"required,email"`
 		Username string `json:"username" validate:"required"`
+		Login    string `json:"login" validate:"required"`
 		Password string `json:"password" validate:"required"`
 	}
 	if err := c.Bind(&form); err != nil {
@@ -35,23 +37,36 @@ func (s AuthService) Register(c echo.Context) error {
 	if err := c.Validate(&form); err != nil {
 		return err
 	}
+	form.Login = strings.ToLower(form.Login)
 	exists, err := s.db.Users.Exists(form.Username)
 	if err != nil {
 		return err
 	}
-	if exists{
+	if exists {
 		return c.JSON(http.StatusConflict, app.Err("username already taken"))
 	}
-	if !s.validateUsername(form.Username){
-		return c.JSON(http.StatusBadRequest, app.Err("username must contains less than 16 symbols"))
+
+	exists, err = s.db.Users.ExistsByLogin(form.Username)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return c.JSON(http.StatusConflict, app.Err("username already taken"))
+	}
+	if !s.validateUsername(form.Username) {
+		return c.JSON(http.StatusBadRequest, app.Err("username must contains less than 14 symbols"))
+	}
+	if !s.validateLogin(form.Login) {
+		return c.JSON(http.StatusBadRequest, app.Err("login must contains less than 16 symbols"))
 	}
 	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.MinCost)
 	if err != nil {
 		return err
 	}
 	u := storage.User{
-		Email: form.Email,
-		Username: form.Username,
+		Email:             form.Email,
+		Username:          form.Username,
+		Login:             form.Login,
 		EncryptedPassword: string(encryptedPass),
 	}
 	err = s.db.Users.Create(u)
@@ -63,19 +78,27 @@ func (s AuthService) Register(c echo.Context) error {
 }
 
 func (s AuthService) validateUsername(username string) bool {
-	if len(username ) > 15 {return false}
-	if app.StringContains(username, "lives", "matter"){
+	if len(username) > 13 || len(username) <= 0 {
+		return false
+	}
+	if app.StringContains(username, "lives", "matter") {
 		return false
 	}
 	return true
 }
 
+func (s AuthService) validateLogin(login string) bool {
+	if len(login) > 25 || len(login) <= 0 {
+		return false
+	}
+	return true
+}
 
 // Login is endpoint for logging in
 // Not done yet.
 func (s AuthService) Login(c echo.Context) error {
 	var form struct {
-		Username string `json:"username" validate:"required"`
+		Login    string `json:"login" validate:"required"`
 		Password string `json:"password" validate:"required"`
 	}
 	if err := c.Bind(&form); err != nil {
@@ -84,7 +107,8 @@ func (s AuthService) Login(c echo.Context) error {
 	if err := c.Validate(&form); err != nil {
 		return err
 	}
-	user, err := s.db.Users.ByUsername(form.Username)
+	form.Login = strings.ToLower(form.Login)
+	user, err := s.db.Users.ByLogin(form.Login)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return err
@@ -92,7 +116,7 @@ func (s AuthService) Login(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, app.Err("user not found"))
 	}
 
-	if !s.compareHash(form.Password,user.EncryptedPassword) {
+	if !s.compareHash(form.Password, user.EncryptedPassword) {
 		return c.JSON(http.StatusBadRequest, app.Err("wrong credentials"))
 	}
 
@@ -113,8 +137,8 @@ func (s AuthService) Login(c echo.Context) error {
 }
 
 func (s AuthService) compareHash(password string, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash),[]byte(password))
-	if err != nil{
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	if err != nil {
 		return false
 	}
 	return true
