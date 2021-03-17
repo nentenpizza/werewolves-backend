@@ -22,5 +22,5 @@ jobs:
       run: go build -v ./cmd/apiserver
       
     - name: deploy
-      run: docker-compose --up build
+      run: sudo docker-compose --up build
     
