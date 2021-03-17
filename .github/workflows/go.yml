@@ -20,3 +20,7 @@ jobs:
 
     - name: Build
       run: go build -v ./cmd/apiserver
+      
+    - name: deploy
+      run: docker-compose --up -d build
+    
