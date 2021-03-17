@@ -2,9 +2,9 @@ package werewolves
 
 // Events names
 const (
-	EventTypeKill = "kill"
+	EventTypeKill         = "kill"
 	EventTypeStateChanged = "state_changed"
-	EventTypeShowRole = "show_role"
+	EventTypeShowRole     = "show_role"
 )
 
 // Event represents an event that we put in Player.Update
@@ -25,8 +25,6 @@ type Event struct {
 	Data      interface{} `json:"data"`
 }
 
-
-
 func NewEvent(eventType string, data interface{}) Event {
 	return Event{
 		EventType: eventType,
@@ -34,7 +32,7 @@ func NewEvent(eventType string, data interface{}) Event {
 	}
 }
 
-type(
+type (
 	StateChangedEvent struct {
 		State string `json:"state"`
 	}
@@ -51,7 +49,7 @@ type ConstableShootEvent struct {
 }
 
 // FromEvent represents all event that require From player id and target id
-type  FromEvent struct {
+type FromEvent struct {
 	// player id who made a action
 	FromID string `json:"from_id"`
 	// target

@@ -64,10 +64,11 @@ type Room struct {
 	started     bool
 	Dead        map[string]bool `json:"dead"`
 	broadcast   chan interface{}
-	ID          string                        `json:"id"`
-	Name        string                        `json:"name"`
-	OpenRoles   map[string]string             `json:"open_roles"`
-	Votes       map[string]uint8              `json:"votes"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	OpenRoles   map[string]string `json:"open_roles"`
+	Votes       map[string]uint8  `json:"votes"`
+	votesCount  int
 	Settings    Settings                      `json:"settings"`
 	Groups      map[string]map[string]*Player `json:"-"`
 	AliveGroups map[string]map[string]*Player `json:"-"`
@@ -185,6 +186,7 @@ func (r *Room) resetVotes() {
 	for _, p := range r.Players {
 		p.Voted = false
 	}
+	r.votesCount = 0
 }
 
 // Changes state to next value in game loop
@@ -212,6 +214,11 @@ func (r *Room) nextState() {
 	log.Println(r.State)
 	ev := Event{EventTypeStateChanged, r}
 	r.BroadcastEvent(ev)
+}
+
+func (r *Room) forceNextState() {
+	r.ticker.Reset(PhaseLength)
+	r.nextState()
 }
 
 // Perform validates Action and performs it

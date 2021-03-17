@@ -55,16 +55,21 @@ func (p *Player) Vote(pID string) Action {
 				r.Votes[pID]++
 				p.Voted = true
 			} else if r.State == Night {
-				if p.Role == "Werewolf" || p.Role == "AlphaWerewolf" { // мне насрать
+				if p.Role == "Werewolf" || p.Role == "AlphaWerewolf" {
 					r.Votes[pID]++
 					p.Voted = true
 				} else {
-					return errors.New("game: can not vote in night as long as you not werewolf")
+					return errors.New("game: can not vote in night as long as you aren't werewolf")
 				}
 			} else {
 				return errors.New("game: can not vote in state discuss")
 			}
-
+			r.votesCount++
+			log.Println(r.votesCount)
+			if r.votesCount == len(r.Players) {
+				log.Println("asd")
+				go r.forceNextState()
+			}
 			return nil
 		},
 
