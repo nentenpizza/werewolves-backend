@@ -20,5 +20,3 @@ services:
       - default
     ports:
       - "7070:7070"
-volumes:
-  data:
