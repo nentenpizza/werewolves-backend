@@ -1,4 +1,3 @@
 package wserver
 
-
-type MiddlewareFunc func(HandlerFunc)HandlerFunc
+type MiddlewareFunc func(HandlerFunc) HandlerFunc

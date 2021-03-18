@@ -18,8 +18,7 @@ func (s UsersService) REGISTER(h handler, g *echo.Group) {
 	g.POST("/user", s.GetUser)
 }
 
-
-func (s UsersService) Me(c echo.Context)error {
+func (s UsersService) Me(c echo.Context) error {
 	token := jwt.From(c.Get("user"))
 
 	user, err := s.db.Users.ByUsername(token.Username)
@@ -34,11 +33,11 @@ func (s UsersService) GetUser(c echo.Context) error {
 	var form struct {
 		Username string `json:"username"`
 	}
-	if err := c.Bind(&form); err != nil{
+	if err := c.Bind(&form); err != nil {
 		c.JSON(http.StatusBadRequest, app.Err(""))
-		return err	
+		return err
 	}
-	if err := c.Validate(&form); err != nil{
+	if err := c.Validate(&form); err != nil {
 		c.JSON(http.StatusBadRequest, app.Err(""))
 		return err
 	}

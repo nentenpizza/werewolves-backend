@@ -11,7 +11,7 @@ type Rooms struct {
 	sync.Mutex
 }
 
-func (m *Rooms) Write(key string, value *werewolves.Room)  {
+func (m *Rooms) Write(key string, value *werewolves.Room) {
 	m.Lock()
 	defer m.Unlock()
 	m.rooms[key] = value
@@ -29,7 +29,7 @@ func (m *Rooms) Delete(key string) {
 	delete(m.rooms, key)
 }
 
-func (m *Rooms) MarshalJSON() ([]byte, error){
+func (m *Rooms) MarshalJSON() ([]byte, error) {
 	j, err := json.Marshal(m.rooms)
 	if err != nil {
 		return nil, err

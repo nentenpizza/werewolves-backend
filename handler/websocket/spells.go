@@ -5,7 +5,7 @@ import (
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
-func (h *handler) OnSkill(ctx wserver.Context) error  {
+func (h *handler) OnSkill(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -38,7 +38,7 @@ func (h *handler) OnSkill(ctx wserver.Context) error  {
 			action = char.Heal(p)
 
 		case *werewolves.AlphaWerewolf:
-			if room.State != werewolves.Night{
+			if room.State != werewolves.Night {
 				return NotAllowedErr
 			}
 			e := TargetedEvent{}
@@ -49,7 +49,7 @@ func (h *handler) OnSkill(ctx wserver.Context) error  {
 			if !ok {
 				return PlayerNotFoundErr
 			}
-			err := client.WriteJSON(Event{Type: EventTypeRevealRole, Data: EventRevealRole{p.Role,p.ID}})
+			err := client.WriteJSON(Event{Type: EventTypeRevealRole, Data: EventRevealRole{p.Role, p.ID}})
 			return err
 		}
 

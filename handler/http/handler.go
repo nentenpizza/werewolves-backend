@@ -5,7 +5,7 @@ import (
 	"github.com/nentenpizza/werewolves/storage"
 )
 
-type Service interface{
+type Service interface {
 	REGISTER(h handler, g *echo.Group)
 }
 
@@ -21,6 +21,6 @@ func NewHandler(h Handler) *handler {
 	return &handler{db: h.DB}
 }
 
-func (h handler) Register(group *echo.Group, service Service)  {
+func (h handler) Register(group *echo.Group, service Service) {
 	service.REGISTER(h, group)
 }

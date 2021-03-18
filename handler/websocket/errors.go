@@ -1,17 +1,17 @@
 package websocket
 
 var (
-	RoomNotFoundErr       = &ServerError{Type: "RoomNotFoundErr"}
+	RoomNotFoundErr = &ServerError{Type: "RoomNotFoundErr"}
 	//GameAlreadyStartedErr = &ServerError{"game_started_error"}
-	PlayerNotFoundErr     = &ServerError{Type: "PlayerNotFoundErr"}
-	RoomStartErr          = &ServerError{Type: "RoomStartErr"}
-	NotAllowedErr         = &ServerError{Type: "NotAllowedErr"}
+	PlayerNotFoundErr = &ServerError{Type: "PlayerNotFoundErr"}
+	RoomStartErr      = &ServerError{Type: "RoomStartErr"}
+	NotAllowedErr     = &ServerError{Type: "NotAllowedErr"}
 
-	NotInRoomRoom = &ServerError{Type: "NotInRoomRoom"}
-	JoinRoomErr 		  =	&ServerError{Type: "JoinRoomErr"}
+	NotInRoomRoom    = &ServerError{Type: "NotInRoomRoom"}
+	JoinRoomErr      = &ServerError{Type: "JoinRoomErr"}
 	AlreadyInRoomErr = &ServerError{Type: "AlreadyInRoomErr"}
 	RoomNotExistsErr = &ServerError{Type: "RoomNotExistsErr"}
-	RoomStartedErr = &ServerError{Type: "RoomStartedErr"}
+	RoomStartedErr   = &ServerError{Type: "RoomStartedErr"}
 )
 
 type ServerError struct {

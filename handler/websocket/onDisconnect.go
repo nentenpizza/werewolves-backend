@@ -7,7 +7,7 @@ func (h *handler) OnDisconnect(ctx wserver.Context) error {
 	if client == nil {
 		return PlayerNotFoundErr
 	}
-	if client.Room() == nil{
+	if client.Room() == nil {
 		h.c.Delete(client.Token.Username)
 		return nil
 	}
