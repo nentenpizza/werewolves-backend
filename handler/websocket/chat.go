@@ -18,7 +18,7 @@ func (h *handler) OnMessage(ctx wserver.Context) error {
 		if client.Room() != nil {
 			event.Username = client.Token.Username
 			ctx.Update.Data = event
-			if len(event.Text) > 160 {
+			if len([]rune(event.Text)) > 160 {
 				return NotAllowedErr
 			}
 			if client.Player.Character != nil {

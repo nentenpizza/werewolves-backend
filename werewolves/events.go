@@ -5,21 +5,19 @@ const (
 	EventTypeKill         = "kill"
 	EventTypeStateChanged = "state_changed"
 	EventTypeShowRole     = "show_role"
+
+	EventTypeRevealRole = "reveal_role"
+
+	EventTypeSavedFromDeath = "saved_from_death"
 )
 
 // Event represents an event that we put in Player.Update
 // if u want to broadcast a kill event to
 // all players in room then Example:
 //
-//		kill := EventExecution{targetID}
-//		ev := Event{ExecutionAction, kill}
-//		for _, player := range room.Players{
-//			player.Update <- ev
-//		}
-//  or
-//		room.Broadcast <- ev
+//		ev := &Event{EventTypeStateChanged, &StateChangedEvent{state}}
+//		Room.BroadcastEvent(ev)
 //
-// but its better to use Room.BroadcastEvent(ev)
 type Event struct {
 	EventType string      `json:"event_type"`
 	Data      interface{} `json:"data"`
@@ -37,6 +35,10 @@ type (
 		State string `json:"state"`
 	}
 )
+type EventRevealRole struct {
+	Role     string `json:"role" mapstructure:"role"`
+	PlayerID string `json:"player_id" mapstructure:"player_id"`
+}
 
 // TargetedEvent represents all events that require only a target id
 type TargetedEvent struct {
@@ -54,4 +56,13 @@ type FromEvent struct {
 	FromID string `json:"from_id"`
 	// target
 	TargetID string `json:"target_id"`
+}
+
+type VoteEvent struct {
+	// player id who made a action
+	FromID string `json:"from_id"`
+	// target
+	TargetID string `json:"target_id"`
+	// count of votes
+	Votes uint8 `json:"votes"`
 }

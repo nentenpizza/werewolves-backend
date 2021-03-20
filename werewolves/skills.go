@@ -34,9 +34,9 @@ func (char *Doctor) Heal(other *Player) Action {
 	char.Lock()
 	defer char.Unlock()
 	return NewAction(DoctorHealAction,
-		func(_ *Room) error {
+		func(r *Room) error {
 			if char.HP() <= 0 {
-				return errors.New("werewolves: player are dead")
+				return errors.New("werewolves: player already dead")
 			}
 			other.Character.SetHP(other.Character.HP() + 1)
 			log.Println("Heal player ", other.ID)

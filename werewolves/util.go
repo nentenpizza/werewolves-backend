@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-func rolesList(playerCount int) ([]func(string) Character, error) {
+func genRolesList(playerCount int) ([]func(string) Character, error) {
 	if playerCount > MaxPlayers {
 		return nil, errors.New("game: players in room must be <= 10")
 	}

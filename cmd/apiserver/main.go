@@ -50,6 +50,7 @@ func main() {
 	)
 
 	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
+
 	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom, wsHandler.WebsocketJWT())
 	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom, wsHandler.WebsocketJWT())

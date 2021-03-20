@@ -131,6 +131,7 @@ func (r *Room) Start() error {
 		if err != nil {
 			return err
 		}
+		r.revealTeams()
 		go r.runCycle()
 		r.started = true
 		r.nextState()
@@ -313,7 +314,7 @@ func (r *Room) Resurrect(playerID string) error {
 
 // defineRoles defines roles for Room.Players
 func (r *Room) defineRoles() error {
-	roles, err := rolesList(len(r.Players))
+	roles, err := genRolesList(len(r.Players))
 	if err != nil {
 		return err
 	}
@@ -336,6 +337,15 @@ func (r *Room) defineRoles() error {
 		i++
 	}
 	return nil
+}
+
+func (r *Room) revealTeams() {
+	wolves, ok := r.Groups["wolves"]
+	if ok {
+		for _, p := range wolves {
+			r.doBroadcastTo("wolves", &Event{EventTypeRevealRole, &EventRevealRole{Role: p.Role, PlayerID: p.ID}})
+		}
+	}
 }
 
 func (r *Room) InGroup(groupName string, playerID string) bool {
@@ -407,20 +417,28 @@ func (r *Room) KillPlayer(player *Player) {
 }
 
 func (r *Room) doKillPlayer(player *Player) {
-	wolves, ok := r.AliveGroups["wolves"]
-	peaceful, okk := r.AliveGroups["peaceful"]
-	player.Kill()
-	for _, v := range player.Groups {
-		r.removeFromAliveGroup(v, player)
+	if player == nil {
+		return
 	}
-	r.doJoinGroup("dead", player)
-	if ok && okk {
-		if len(wolves) >= len(peaceful) {
-			r.done <- &RoomResult{WonGroup: "wolves"}
+	if player.Character.HP() <= 1 {
+		wolves, ok := r.AliveGroups["wolves"]
+		peaceful, okk := r.AliveGroups["peaceful"]
+		player.Kill()
+		for _, v := range player.Groups {
+			r.removeFromAliveGroup(v, player)
 		}
-		if len(wolves) <= 0 {
-			r.done <- &RoomResult{WonGroup: "peaceful"}
+		r.doJoinGroup("dead", player)
+		if ok && okk {
+			if len(wolves) >= len(peaceful) {
+				r.done <- &RoomResult{WonGroup: "wolves"}
+			}
+			if len(wolves) <= 0 {
+				r.done <- &RoomResult{WonGroup: "peaceful"}
+			}
 		}
+	} else {
+		r.BroadcastEvent(&Event{EventTypeSavedFromDeath, TargetedEvent{TargetID: player.ID}})
+		player.Character.SetHP(1)
 	}
 }
 

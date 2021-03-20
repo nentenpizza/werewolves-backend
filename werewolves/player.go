@@ -30,7 +30,7 @@ type Player struct {
 	sync.Mutex `json:"-"`
 }
 
-func (p *Player) Vote(pID string) Action {
+func (p *Player) Vote(pID string, votes uint8) Action {
 	p.Lock()
 	defer p.Unlock()
 	return NewAction(
@@ -51,29 +51,25 @@ func (p *Player) Vote(pID string) Action {
 				return errors.New("game: player is not in room")
 			}
 
-			if r.State == DayVoting {
-				r.Votes[pID]++
-				p.Voted = true
-			} else if r.State == Night {
+			if r.State == Discuss{
+				return errors.New("game: can not vote in state discuss")
+			}
+			if r.State == Night {
 				if p.Role == "Werewolf" || p.Role == "AlphaWerewolf" {
-					r.Votes[pID]++
-					p.Voted = true
 				} else {
 					return errors.New("game: can not vote in night as long as you aren't werewolf")
 				}
-			} else {
-				return errors.New("game: can not vote in state discuss")
 			}
+			p.Voted = true
 			r.votesCount++
-			log.Println(r.votesCount)
+			r.Votes[pID] += votes
 			if r.votesCount == len(r.Players) {
-				log.Println("asd")
 				go r.forceNextState()
 			}
 			return nil
 		},
 
-		NewEvent(VoteAction, FromEvent{p.ID, pID}),
+		NewEvent(VoteAction, VoteEvent{p.ID, pID, votes}),
 	)
 }
 

@@ -51,6 +51,21 @@ func (h *handler) OnSkill(ctx wserver.Context) error {
 			}
 			err := client.WriteJSON(Event{Type: EventTypeRevealRole, Data: EventRevealRole{p.Role, p.ID}})
 			return err
+
+		case *werewolves.Psychic:
+			if room.State != werewolves.Night {
+				return NotAllowedErr
+			}
+			e := TargetedEvent{}
+			if err := ctx.Bind(&e); err != nil {
+				return err
+			}
+			p, ok := room.Players[e.TargetID]
+			if !ok {
+				return PlayerNotFoundErr
+			}
+			err := client.WriteJSON(Event{Type: EventTypeRevealRole, Data: EventRevealRole{p.Role, p.ID}})
+			return err
 		}
 
 		err := client.Room().Perform(action)
