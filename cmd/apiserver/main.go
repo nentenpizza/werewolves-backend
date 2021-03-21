@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/handler/http"
@@ -16,21 +17,11 @@ import (
 
 var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd")
 
-func onError(err error, c wserver.Context) {
-	log.Println(err, c)
-}
-
-func middle() wserver.MiddlewareFunc {
-	return func(next wserver.HandlerFunc) wserver.HandlerFunc {
-		return func(c wserver.Context) error {
-			log.Println("incoming message")
-			return next(c)
-		}
-	}
-}
+var PGURL = flag.String("PG_URL", os.Getenv("PG_URL"), "url to your postgres db")
 
 func main() {
-	db, err := storage.Open(os.Getenv("PG_URL"))
+	flag.Parse()
+	db, err := storage.Open(*PGURL)
 	if err != nil {
 		log.Fatal(err)
 	}
