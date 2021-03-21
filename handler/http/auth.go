@@ -26,10 +26,10 @@ func (s AuthService) REGISTER(h handler, g *echo.Group) {
 // Register is endpoint for signing in
 func (s AuthService) Register(c echo.Context) error {
 	var form struct {
-		Email    string `json:"email" validate:"required,email"`
-		Username string `json:"username" validate:"required"`
-		Login    string `json:"login" validate:"required"`
-		Password string `json:"password" validate:"required"`
+		Email    string `json:"email"`
+		Username string `json:"username"`
+		Login    string `json:"login"`
+		Password string `json:"password"`
 	}
 	if err := c.Bind(&form); err != nil {
 		return err
@@ -51,13 +51,16 @@ func (s AuthService) Register(c echo.Context) error {
 		return err
 	}
 	if exists {
-		return c.JSON(http.StatusConflict, app.Err("username already taken"))
+		return c.JSON(http.StatusConflict, app.Err("login already taken"))
 	}
 	if !s.validateUsername(form.Username) {
-		return c.JSON(http.StatusBadRequest, app.Err("username must contains less than 14 symbols"))
+		return c.JSON(http.StatusBadRequest, app.Err("usr 3-10 chars"))
 	}
 	if !s.validateLogin(form.Login) {
-		return c.JSON(http.StatusBadRequest, app.Err("login must contains less than 16 symbols"))
+		return c.JSON(http.StatusBadRequest, app.Err("login 3-16 chars"))
+	}
+	if !s.validatePassword(form.Password) {
+		return c.JSON(http.StatusBadRequest, app.Err("password 5-30 chars"))
 	}
 	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.MinCost)
 	if err != nil {
@@ -78,7 +81,7 @@ func (s AuthService) Register(c echo.Context) error {
 }
 
 func (s AuthService) validateUsername(username string) bool {
-	if len(username) > 13 || len(username) <= 0 {
+	if len(username) > 10 || len(username) <= 3 {
 		return false
 	}
 	if app.StringContains(username, "lives", "matter") {
@@ -88,7 +91,14 @@ func (s AuthService) validateUsername(username string) bool {
 }
 
 func (s AuthService) validateLogin(login string) bool {
-	if len(login) > 25 || len(login) <= 0 {
+	if len(login) > 16 || len(login) <= 3 {
+		return false
+	}
+	return true
+}
+
+func (s AuthService) validatePassword(password string) bool {
+	if len(password) < 5 && len(password) > 30 {
 		return false
 	}
 	return true
@@ -98,8 +108,8 @@ func (s AuthService) validateLogin(login string) bool {
 // Not done yet.
 func (s AuthService) Login(c echo.Context) error {
 	var form struct {
-		Login    string `json:"login" validate:"required"`
-		Password string `json:"password" validate:"required"`
+		Login    string `json:"login"`
+		Password string `json:"password"`
 	}
 	if err := c.Bind(&form); err != nil {
 		return err
