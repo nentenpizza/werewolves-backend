@@ -10,6 +10,7 @@ import (
 	j "github.com/nentenpizza/werewolves/jwt"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
@@ -19,8 +20,9 @@ const (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:   1024,
+	WriteBufferSize:  1024,
+	HandshakeTimeout: time.Second * 60,
 }
 
 type HandlerFunc func(ctx Context) error

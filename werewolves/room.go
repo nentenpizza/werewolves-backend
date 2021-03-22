@@ -148,8 +148,9 @@ func (r *Room) runCycle() {
 			return
 
 		case <-r.ticker.C:
+			r.Lock()
 			r.nextState()
-
+			r.Unlock()
 		}
 	}
 }
@@ -192,8 +193,6 @@ func (r *Room) resetVotes() {
 
 // Changes state to next value in game loop
 func (r *Room) nextState() {
-	r.Lock()
-	defer r.Unlock()
 	switch r.State {
 	case Discuss:
 		r.State = DayVoting
@@ -301,6 +300,8 @@ func (r *Room) RemovePlayer(playerID string) error {
 }
 
 func (r *Room) Resurrect(playerID string) error {
+	r.Lock()
+	defer r.Unlock()
 	p, ok := r.Players[playerID]
 	if !ok {
 		return fmt.Errorf(
