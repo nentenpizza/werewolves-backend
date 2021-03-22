@@ -51,7 +51,7 @@ func (p *Player) Vote(pID string, votes uint8) Action {
 				return errors.New("game: player is not in room")
 			}
 
-			if r.State == Discuss{
+			if r.State == Discuss {
 				return errors.New("game: can not vote in state discuss")
 			}
 			if r.State == Night {

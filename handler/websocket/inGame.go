@@ -14,11 +14,11 @@ func (h *handler) OnVote(ctx wserver.Context) error {
 	if client.Room() == nil {
 		return NotInRoomRoom
 	}
-	if client.Player == nil{
+	if client.Player == nil {
 		return PlayerNotFoundErr
 	}
 	var vCount uint8 = 1
-	if client.Player.Role == "AlphaWerewolf" && client.Room().State == werewolves.Night{
+	if client.Player.Role == "AlphaWerewolf" && client.Room().State == werewolves.Night {
 		vCount = 2
 	}
 	event := &EventPlayerID{}
