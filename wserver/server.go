@@ -10,6 +10,7 @@ import (
 	j "github.com/nentenpizza/werewolves/jwt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -52,6 +53,45 @@ type Server struct {
 	useJWT   bool
 	secret   []byte
 	claims   jwt.Claims
+}
+
+type Conn struct {
+	conn *websocket.Conn
+	sync.Mutex
+}
+
+func NewConn(conn *websocket.Conn) *Conn {
+	return &Conn{conn: conn}
+}
+
+func (c *Conn) WriteMessage(code int, msg []byte) error {
+	c.Lock()
+	defer c.Unlock()
+	return c.conn.WriteMessage(code, msg)
+}
+
+func (c *Conn) WriteJSON(v interface{}) error {
+	c.Lock()
+	defer c.Unlock()
+	return c.conn.WriteJSON(v)
+}
+
+func (c *Conn) SetPongHandler(h func(appdata string) error) {
+	c.Lock()
+	defer c.Unlock()
+	c.conn.SetPongHandler(h)
+}
+
+func (c *Conn) Close() error {
+	c.Lock()
+	defer c.Unlock()
+	return c.Close()
+}
+
+func (c *Conn) ReadMessage() (messageType int, p []byte, err error) {
+	c.Lock()
+	defer c.Unlock()
+	return c.ReadMessage()
 }
 
 func NewServer(s Settings) *Server {
@@ -121,52 +161,49 @@ func (s *Server) Listen(c echo.Context) error {
 		}
 
 	}
-	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
 	}
-	s.prepareConn(conn)
+	conn := NewConn(ws)
+	s.keepAlive(conn, PongTimeout)
 	go s.reader(conn, tok)
 	return c.JSON(http.StatusSwitchingProtocols, app.Ok())
 }
 
-func (s *Server) prepareConn(conn *websocket.Conn) {
-	keepAlive := func(conn *websocket.Conn, timeout time.Duration) {
-		lastResponse := time.Now()
-		conn.SetPongHandler(func(_ string) error {
-			lastResponse = time.Now()
-			return nil
-		})
-		go func() {
-			for {
-				err := conn.WriteMessage(websocket.PingMessage, []byte("keepalive"))
-				if err != nil {
-					return
-				}
-				time.Sleep((timeout * 9) / 10)
-				if time.Now().Sub(lastResponse) > timeout {
-					log.Printf("Ping don't get response, disconnecting to %s", conn.LocalAddr())
-					err = conn.Close()
-					if s.OnError != nil {
-						s.OnError(err, Context{})
-					}
-					return
-				}
+func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
+	lastResponse := time.Now()
+	conn.SetPongHandler(func(_ string) error {
+		lastResponse = time.Now()
+		return nil
+	})
+	go func() {
+		for {
+			err := conn.WriteMessage(websocket.PingMessage, []byte("keepalive"))
+			if err != nil {
+				return
 			}
-		}()
-	}
-	keepAlive(conn, PongTimeout)
-
+			time.Sleep((timeout * 9) / 10)
+			if time.Now().Sub(lastResponse) > timeout {
+				log.Printf("Ping don't get response, disconnecting to %s", conn.conn.LocalAddr())
+				err = conn.Close()
+				if s.OnError != nil {
+					s.OnError(err, Context{})
+				}
+				return
+			}
+		}
+	}()
 }
 
-func (s *Server) reader(conn *websocket.Conn, token string) {
-	ctx := Context{Conn: conn, storage: make(map[string]interface{})}
+func (s *Server) reader(conn *Conn, token string) {
+	ctx := Context{Conn: conn.conn, storage: make(map[string]interface{})}
 	ctx.Set("token", token)
 	s.runOnConnectHandler(ctx)
 	for {
-		ctx := Context{Conn: conn, storage: make(map[string]interface{})}
+		ctx := Context{Conn: conn.conn, storage: make(map[string]interface{})}
 		ctx.Set("token", token)
-		_, msg, err := conn.ReadMessage()
+		_, msg, err := conn.conn.ReadMessage()
 		if err != nil {
 			s.OnError(err, ctx)
 			s.runOnDisconnectHandler(ctx)
