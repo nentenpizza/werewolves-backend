@@ -25,6 +25,8 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Second * 60,
 }
 
+var PongTimeout = time.Second * 60
+
 type HandlerFunc func(ctx Context) error
 
 type OnErrorFunc func(error, Context)
@@ -123,8 +125,38 @@ func (s *Server) Listen(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	s.prepareConn(conn)
 	go s.reader(conn, tok)
 	return nil
+}
+
+func (s *Server) prepareConn(conn *websocket.Conn) {
+	keepAlive := func(conn *websocket.Conn, timeout time.Duration) {
+		lastResponse := time.Now()
+		conn.SetPongHandler(func(_ string) error {
+			lastResponse = time.Now()
+			return nil
+		})
+		go func() {
+			for {
+				err := conn.WriteMessage(websocket.PingMessage, []byte("keepalive"))
+				if err != nil {
+					return
+				}
+				time.Sleep((timeout * 9) / 10)
+				if time.Now().Sub(lastResponse) > timeout {
+					log.Printf("Ping don't get response, disconnecting to %s", conn.LocalAddr())
+					err = conn.Close()
+					if s.OnError != nil {
+						s.OnError(err, Context{})
+					}
+					return
+				}
+			}
+		}()
+	}
+	keepAlive(conn, PongTimeout)
+
 }
 
 func (s *Server) reader(conn *websocket.Conn, token string) {
