@@ -127,7 +127,7 @@ func (s *Server) Listen(c echo.Context) error {
 	}
 	s.prepareConn(conn)
 	go s.reader(conn, tok)
-	return nil
+	return c.JSON(http.StatusSwitchingProtocols, app.Ok())
 }
 
 func (s *Server) prepareConn(conn *websocket.Conn) {
