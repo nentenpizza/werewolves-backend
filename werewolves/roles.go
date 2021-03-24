@@ -5,16 +5,16 @@ import "sync"
 var rolesMap = map[int][]func(parentID string) Character{
 	1:  {newConstable},
 	2:  {newConstable, newAlphaWerewolf},
-	3:  {newDoctor, newPsychic, newWerewolf},
-	4:  {newConstable, newWerewolf, newVillager, newVillager},
-	5:  {newVillager, newWerewolf, newVillager, newVillager, newConstable},
-	6:  {newVillager, newAlphaWerewolf, newVillager, newVillager, newVillager, newVillager},
-	7:  {newConstable, newConstable, newWerewolf, newVillager, newVillager, newVillager, newConstable},
-	8:  {newWerewolf, newConstable, newWerewolf, newVillager, newVillager, newVillager, newVillager, newConstable},
-	9:  {newWerewolf, newDoctor, newWerewolf, newPsychic, newVillager, newVillager, newVillager, newVillager, newConstable},
-	10: {newWerewolf, newAlphaWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager, newConstable},
-	11: {newVillager, newAlphaWerewolf, newWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager},
-	12: {newVillager, newAlphaWerewolf, newWerewolf, newWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager, newVillager},
+	3:  {newVillager, newVillager, newWerewolf},
+	4:  {newVillager, newVillager, newWerewolf, newVillager},
+	5:  {newVillager, newVillager, newWerewolf, newVillager, newVillager},
+	6:  {newVillager, newVillager, newDoctor, newPsychic, newWerewolf, newWerewolf},
+	7:  {newWerewolf, newAlphaWerewolf, newPsychic, newDoctor, newVillager, newVillager, newVillager},
+	8:  {newAlphaWerewolf, newDoctor, newWerewolf, newVillager, newVillager, newVillager, newVillager, newVillager},
+	9:  {newAlphaWerewolf, newDoctor, newWerewolf, newPsychic, newVillager, newVillager, newVillager, newVillager, newConstable},
+	10: {newWerewolf, newAlphaWerewolf, newWerewolf, newPsychic, newVillager, newVillager, newVillager, newVillager, newDoctor, newConstable},
+	11: {newConstable, newAlphaWerewolf, newWerewolf, newWerewolf, newDoctor, newPsychic, newVillager, newVillager, newVillager, newVillager, newVillager},
+	12: {newPsychic, newAlphaWerewolf, newWerewolf, newWerewolf, newWerewolf, newVillager, newVillager, newVillager, newVillager, newPsychic, newDoctor, newConstable},
 }
 
 type CharSettings struct {
