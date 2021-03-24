@@ -22,7 +22,7 @@ const (
 )
 
 // Duration of each phase
-const (
+var (
 	PhaseLength = 5 * time.Second
 )
 
