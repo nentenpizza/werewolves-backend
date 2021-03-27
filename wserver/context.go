@@ -1,12 +1,11 @@
 package wserver
 
 import (
-	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 )
 
 type Context struct {
-	Conn *websocket.Conn
+	Conn *Conn
 
 	storage map[string]interface{}
 

@@ -1,16 +1,16 @@
 package websocket
 
 import (
-	"github.com/gorilla/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/werewolves"
+	"github.com/nentenpizza/werewolves/wserver"
 	"log"
 	"sync"
 )
 
 type Client struct {
 	sync.Mutex
-	conn *websocket.Conn
+	conn *wserver.Conn
 	*werewolves.Player
 	room      *werewolves.Room
 	AFK       bool
@@ -26,17 +26,17 @@ func (c *Client) LeaveRoom() {
 	c.Player = nil
 }
 
-func NewClient(conn *websocket.Conn, token jwt.Claims, unreached []interface{}, quit chan bool) *Client {
+func NewClient(conn *wserver.Conn, token jwt.Claims, unreached []interface{}, quit chan bool) *Client {
 	return &Client{conn: conn, Token: token, Unreached: unreached, quit: quit}
 }
 
-func (c *Client) Conn() *websocket.Conn {
+func (c *Client) Conn() *wserver.Conn {
 	c.Lock()
 	defer c.Unlock()
 	return c.conn
 }
 
-func (c *Client) UpdateConn(conn *websocket.Conn) {
+func (c *Client) UpdateConn(conn *wserver.Conn) {
 	c.Lock()
 	defer c.Unlock()
 	c.conn = conn

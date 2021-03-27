@@ -166,9 +166,9 @@ func (s *Server) Listen(c echo.Context) error {
 		return err
 	}
 	conn := NewConn(ws)
-	s.keepAlive(conn, PongTimeout)
+	go s.keepAlive(conn, PongTimeout)
 	go s.reader(conn, tok)
-	return c.JSON(http.StatusSwitchingProtocols, app.Ok())
+	return nil
 }
 
 func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
@@ -177,31 +177,29 @@ func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
 		lastResponse = time.Now()
 		return nil
 	})
-	go func() {
-		for {
-			err := conn.WriteMessage(websocket.PingMessage, []byte("keepalive"))
-			if err != nil {
-				return
-			}
-			time.Sleep((timeout * 9) / 10)
-			if time.Now().Sub(lastResponse) > timeout {
-				log.Printf("Ping don't get response, disconnecting to %s", conn.conn.LocalAddr())
-				err = conn.Close()
-				if s.OnError != nil {
-					s.OnError(err, Context{})
-				}
-				return
-			}
+	for {
+		err := conn.WriteMessage(websocket.PingMessage, []byte("keepalive"))
+		if err != nil {
+			return
 		}
-	}()
+		time.Sleep((timeout * 9) / 10)
+		if time.Now().Sub(lastResponse) > timeout {
+			log.Printf("Ping don't get response, disconnecting to %s", conn.conn.LocalAddr())
+			err = conn.Close()
+			if s.OnError != nil {
+				s.OnError(err, Context{})
+			}
+			return
+		}
+	}
 }
 
 func (s *Server) reader(conn *Conn, token string) {
-	ctx := Context{Conn: conn.conn, storage: make(map[string]interface{})}
+	ctx := Context{Conn: conn, storage: make(map[string]interface{})}
 	ctx.Set("token", token)
 	s.runOnConnectHandler(ctx)
 	for {
-		ctx := Context{Conn: conn.conn, storage: make(map[string]interface{})}
+		ctx := Context{Conn: conn, storage: make(map[string]interface{})}
 		ctx.Set("token", token)
 		_, msg, err := conn.conn.ReadMessage()
 		if err != nil {
