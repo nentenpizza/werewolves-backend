@@ -2,7 +2,6 @@ package wserver
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -154,10 +153,10 @@ func (s *Server) Listen(c echo.Context) error {
 			return s.secret, nil
 		})
 		if err != nil {
-			return err
+			return c.JSON(http.StatusBadRequest, "bad token")
 		}
 		if !tokenx.Valid {
-			return errors.New("wserver: invalid token")
+			return c.JSON(http.StatusBadRequest, "bad token")
 		}
 
 	}
