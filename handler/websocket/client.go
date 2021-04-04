@@ -6,6 +6,7 @@ import (
 	"github.com/nentenpizza/werewolves/wserver"
 	"log"
 	"sync"
+	"time"
 )
 
 type Client struct {
@@ -17,6 +18,8 @@ type Client struct {
 	Token     jwt.Claims
 	Unreached []interface{}
 	quit      chan bool
+	FloodWait time.Time
+	EmojiWait time.Time
 }
 
 func (c *Client) LeaveRoom() {
@@ -27,7 +30,14 @@ func (c *Client) LeaveRoom() {
 }
 
 func NewClient(conn *wserver.Conn, token jwt.Claims, unreached []interface{}, quit chan bool) *Client {
-	return &Client{conn: conn, Token: token, Unreached: unreached, quit: quit}
+	return &Client{
+		conn:      conn,
+		Token:     token,
+		Unreached: unreached,
+		quit:      quit,
+		FloodWait: time.Now(),
+		EmojiWait: time.Now(),
+	}
 }
 
 func (c *Client) Conn() *wserver.Conn {
@@ -94,6 +104,7 @@ func (c *Client) WriteJSON(i interface{}) error {
 		c.Unreached = append(c.Unreached, i)
 		log.Println(c.Token.Username, "unreached", i)
 	}
+	log.Println(i)
 	return err
 }
 

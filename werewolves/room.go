@@ -349,6 +349,7 @@ func (r *Room) revealTeams() {
 	}
 }
 
+// InGroup returns true if player with playerID in group with groupName
 func (r *Room) InGroup(groupName string, playerID string) bool {
 	group, ok := r.Groups[groupName]
 	if ok {

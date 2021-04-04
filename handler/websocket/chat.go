@@ -3,7 +3,11 @@ package websocket
 import (
 	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
+	"time"
 )
+
+var FloodWaitDuration = 2 * time.Second
+var EmojiWaitDuration = 2 * time.Second
 
 func (h *handler) OnMessage(ctx wserver.Context) error {
 	client := ctx.Get("client").(*Client)
@@ -18,21 +22,32 @@ func (h *handler) OnMessage(ctx wserver.Context) error {
 		if client.Room() != nil {
 			event.Username = client.Token.Username
 			ctx.Update.Data = event
+			if time.Now().Sub(client.FloodWait) < FloodWaitDuration {
+				client.WriteJSON(Event{
+					EventTypeFloodWait,
+					EventFloodWait{int64(time.Now().Sub(client.FloodWait) / time.Second)},
+				})
+				return nil
+			}
 			if len([]rune(event.Text)) > 160 {
 				return NotAllowedErr
 			}
 			if client.Player.Character != nil {
-				if client.Player.Character.HP() <= 0 {
+				if client.Player.Character.HP() > 0 {
+					if client.Room().State != werewolves.Night {
+						client.Room().BroadcastEvent(ctx.Update)
+					} else {
+						if client.Room().InGroup("wolves", client.Player.ID) {
+							client.Room().BroadcastTo("wolves", ctx.Update)
+						}
+					}
+				} else {
 					client.Room().BroadcastTo("dead", ctx.Update)
-					return nil
 				}
-			}
-			if client.Room().State != werewolves.Night {
-				client.Room().BroadcastEvent(ctx.Update)
+
+				client.FloodWait = time.Now()
 			} else {
-				if client.Room().InGroup("wolves", client.Player.ID) {
-					client.Room().BroadcastTo("wolves", ctx.Update)
-				}
+				client.Room().BroadcastEvent(ctx.Update)
 			}
 		}
 	}

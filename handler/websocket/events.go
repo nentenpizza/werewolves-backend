@@ -20,11 +20,13 @@ const (
 	EventTypeDisconnected = "disconnected"
 	EventTypeNotInGame    = "not_in_game"
 
-	EventTypeSendMessage = "send_message"
-	EventTypeUseSkill    = "use_skill"
-	EventTypeRevealRole  = "reveal_role"
+	EventTypeUseSkill   = "use_skill"
+	EventTypeRevealRole = "reveal_role"
 
-	EventTypeSendEmote = "send_emote"
+	EventTypeSendMessage = "send_message"
+	EventTypeSendEmote   = "send_emote"
+	EventTypeFloodWait   = "flood_wait"
+	EventTypeEmojiWait   = "emoji_wait"
 )
 
 // Event types for skills
@@ -95,6 +97,10 @@ type (
 		Emote  string `json:"emote" mapstructure:"emote"`
 	}
 )
+
+type EventFloodWait struct {
+	Left int64 `json:"left"`
+}
 
 // Events for in-game stuff
 type (
