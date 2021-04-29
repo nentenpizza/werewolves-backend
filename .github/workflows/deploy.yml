@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Deploy
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Set up variables
+        id: vars
+        run: |
+          echo ::set-output name=pkg::"docker.pkg.github.com/nentenpizza/werewolves-backend/werewolves-backend"
+          echo ::set-output name=tag::$(git rev-parse --short HEAD)
+      - name: Push container
+        run: |
+          sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} docker.pkg.github.com
+          sudo docker build -t ${{ steps.vars.outputs.pkg }}:${{ steps.vars.outputs.tag }} .
+          sudo docker build -t ${{ steps.vars.outputs.pkg }}:latest .
+          sudo docker push ${{ steps.vars.outputs.pkg }}:${{ steps.vars.outputs.tag }}
+          sudo docker push ${{ steps.vars.outputs.pkg }}:latest
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script_stop: true
+          script: |
+            cd ~/werewolves-backend
+            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} docker.pkg.github.com
+            sudo docker pull ${{ steps.vars.outputs.pkg }}:${{ steps.vars.outputs.tag }}
+            sudo TAG=${{ steps.vars.outputs.tag }} docker-compose up -d
+            sudo docker-compose logs --tail=100 werewolves-backend
