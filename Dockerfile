@@ -6,6 +6,8 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 
+COPY assets ./assets
+
 RUN go mod download
 
 COPY . .
@@ -18,6 +20,8 @@ RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/.env .
+
+COPY --from=builder /app/assets ./assets
 
 EXPOSE 7070
 

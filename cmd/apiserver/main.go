@@ -20,7 +20,7 @@ var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd")
 
 var PGURL = flag.String("PG_URL", os.Getenv("PG_URL"), "url to your postgres db")
 
-var phaseLength = flag.Int("phase", 5, "each phase length in game")
+var phaseLength = flag.Int("phase", 5, "phase length in game")
 
 func main() {
 	flag.Parse()
