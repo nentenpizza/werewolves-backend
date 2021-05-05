@@ -14,3 +14,6 @@ Commit:
  
 - Please follow style of code that already exists
 - 1 feature = 1 pull request
+
+#How to setup this thing
+coming soon...
