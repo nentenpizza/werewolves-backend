@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (h *handler) OnError(err error, ctx wserver.Context) {
+func (h *handler) OnError(err error, ctx *wserver.Context) {
 	client, ok := ctx.Get("client").(*Client)
 	if ok {
 		if err != nil {

@@ -10,7 +10,7 @@ import (
 
 func (h *handler) WebsocketJWT() wserver.MiddlewareFunc {
 	return func(next wserver.HandlerFunc) wserver.HandlerFunc {
-		return func(c wserver.Context) error {
+		return func(c *wserver.Context) error {
 			tok := (c.Get("token")).(string)
 			if tok == "" {
 				return errors.New("token is nil")

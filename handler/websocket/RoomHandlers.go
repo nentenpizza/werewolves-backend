@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func (h *handler) OnJoinRoom(ctx wserver.Context) error {
+func (h *handler) OnJoinRoom(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -48,7 +48,7 @@ func (h *handler) OnJoinRoom(ctx wserver.Context) error {
 	return nil
 }
 
-func (h *handler) OnStartGame(ctx wserver.Context) error {
+func (h *handler) OnStartGame(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -76,7 +76,7 @@ func (h *handler) OnStartGame(ctx wserver.Context) error {
 	return nil
 }
 
-func (h *handler) OnCreateRoom(ctx wserver.Context) error {
+func (h *handler) OnCreateRoom(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -122,7 +122,7 @@ func (h *handler) OnCreateRoom(ctx wserver.Context) error {
 	return nil
 }
 
-func (h *handler) OnLeaveRoom(ctx wserver.Context) error {
+func (h *handler) OnLeaveRoom(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
