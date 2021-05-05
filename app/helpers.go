@@ -6,6 +6,10 @@ func Ok() map[string]bool {
 	return map[string]bool{"ok": true}
 }
 
+func OkWithField(field interface{}) map[string]interface{} {
+	return map[string]interface{}{"ok": field}
+}
+
 func Err(msg string) map[string]string {
 	return map[string]string{"error": msg}
 }

@@ -78,6 +78,27 @@ func main() {
 		e.Group("/api/game"),
 		http.GameService{},
 	)
+
+	h.Register(
+		g.Group("/api/reports"),
+		http.ReportsService{},
+	)
+
+	h.Register(
+		g.Group("/api/honors"),
+		http.HonorsService{},
+	)
+
+	h.Register(
+		g.Group("/api/friends"),
+		http.FriendsStorage{},
+	)
+
+	h.Register(
+		g.Group("/api/inventory"),
+		http.InventoryService{},
+	)
+
 	e.Logger.Fatal(e.Start(":7070"))
 }
 

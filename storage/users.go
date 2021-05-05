@@ -12,6 +12,8 @@ type (
 		Create(User) error
 		Exists(username string) (has bool, _ error)
 		ByUsername(username string) (user User, _ error)
+		ByID(id int) (user User, _ error)
+		ExistsByID(id int) (exists bool, _ error)
 		ExistsByLogin(login string) (has bool, _ error)
 		ByLogin(login string) (user User, _ error)
 		Update(user User) error
@@ -69,6 +71,16 @@ func (db *Users) ExistsByLogin(login string) (has bool, _ error) {
 func (db Users) ByLogin(login string) (user User, _ error) {
 	const q = `select * from users where login = $1`
 	return user, db.Get(&user, q, login)
+}
+
+func (db Users) ExistsByID(id int) (exists bool, _ error) {
+	const q = `select exists(select * from users where id = $1)`
+	return exists, db.Get(&exists, q, id)
+}
+
+func (db Users) ByID(id int) (user User, _ error) {
+	const q = `select * from users where id = $1`
+	return user, db.Get(&user, q, id)
 }
 
 func (db Users) Update(user User) error {

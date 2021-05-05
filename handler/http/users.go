@@ -34,11 +34,9 @@ func (s UsersService) GetUser(c echo.Context) error {
 		Username string `json:"username"`
 	}
 	if err := c.Bind(&form); err != nil {
-		c.JSON(http.StatusBadRequest, app.Err(""))
 		return err
 	}
 	if err := c.Validate(&form); err != nil {
-		c.JSON(http.StatusBadRequest, app.Err(""))
 		return err
 	}
 

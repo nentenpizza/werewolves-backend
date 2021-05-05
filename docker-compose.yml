@@ -6,14 +6,16 @@ services:
       - .env
     ports:
       - "5432:5432"
-    volumes:
-      - data:/var/lib/postgresql/data
   server:
     container_name: werewolves-backend
-    image: docker.pkg.github.com/nentenpizza/werewolves-backend/werewolves-backend:latest
+    build: ./
     restart: always
     ports:
       - 7070:7070
+    env_file:
+      - .env
+  migrate:
+    build: ./storage/migrate/
     env_file:
       - .env
 volumes:
