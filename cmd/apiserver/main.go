@@ -46,12 +46,12 @@ func main() {
 
 	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
 
-	server.Use(wsHandler.WebsocketJWT())
+	server.Use(wsHandler.WebsocketJWT)
 	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom)
 	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom)
 	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom)
 	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame)
-	server.Handle(wserver.OnConnect, wsHandler.OnConnect, wsHandler.WebsocketJWT())
+	server.Handle(wserver.OnConnect, wsHandler.OnConnect)
 	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage)
 	server.Handle(websocket.EventTypeVote, wsHandler.OnVote)
 	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)

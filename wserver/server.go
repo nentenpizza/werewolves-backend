@@ -134,8 +134,8 @@ func (s *Server) Handle(eventType interface{}, h HandlerFunc, m ...MiddlewareFun
 	default:
 		panic("wserver: unsupported event_type")
 	}
-	h = func(c *Context) error { return applyMiddleware(h, m...)(c) }
-	s.handlers[eventType] = h
+	handler := func(c *Context) error { return applyMiddleware(h, m...)(c) }
+	s.handlers[eventType] = handler
 }
 
 func (s *Server) runHandler(h HandlerFunc, c *Context) {
