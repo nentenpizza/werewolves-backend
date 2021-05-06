@@ -2,12 +2,11 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/nentenpizza/werewolves/werewolves"
-	"time"
 )
 
 type GameService struct {
 	handler
+	PhaseLength int
 }
 
 func (s GameService) REGISTER(h handler, g *echo.Group) {
@@ -16,5 +15,5 @@ func (s GameService) REGISTER(h handler, g *echo.Group) {
 }
 
 func (s GameService) GetPhaseLength(c echo.Context) error {
-	return c.JSON(200, echo.Map{"length": werewolves.PhaseLength / time.Second})
+	return c.JSON(200, echo.Map{"length": s.PhaseLength})
 }

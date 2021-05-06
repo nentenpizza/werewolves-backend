@@ -176,6 +176,7 @@ func (s *Server) Listen(c echo.Context) error {
 		return err
 	}
 	conn := NewConn(ws)
+	s.onConnect(conn, tok)
 	go s.keepAlive(conn, PongTimeout)
 	go s.reader(conn, tok)
 	return nil
@@ -204,12 +205,15 @@ func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
 	}
 }
 
-func (s *Server) reader(conn *Conn, token string) {
-	ctx := &Context{Conn: conn, storage: make(map[string]interface{})}
+func (s *Server) onConnect(conn *Conn, token string) {
+	ctx := NewContext(conn)
 	ctx.Set("token", token)
 	s.runOnConnectHandler(ctx)
+}
+
+func (s *Server) reader(conn *Conn, token string) {
 	for {
-		ctx := &Context{Conn: conn, storage: make(map[string]interface{})}
+		ctx := NewContext(conn)
 		ctx.Set("token", token)
 		_, msg, err := conn.conn.ReadMessage()
 		if err != nil {
