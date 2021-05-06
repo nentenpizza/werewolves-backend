@@ -20,3 +20,4 @@
 *.VSCodeCounter
 
 *.vscode
+.env
