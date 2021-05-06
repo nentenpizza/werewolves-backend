@@ -10,21 +10,11 @@ import (
 
 func (h *handler) WebsocketJWT(next wserver.HandlerFunc) wserver.HandlerFunc {
 	return func(c *wserver.Context) error {
-		tok := (c.Get("token")).(string)
-		if tok == "" {
+		tok := (c.Get("token")).(*jwt.Token)
+		if tok == nil {
 			return errors.New("token is nil")
 		}
-		tokenx, err := jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
-			return h.s, nil
-		})
-		if err != nil {
-			return err
-		}
-
-		if !tokenx.Valid {
-			return errors.New("middleware: invalid token")
-		}
-		token := j.From(tokenx)
+		token := j.From(tok)
 		client := h.c.Read(token.Username)
 		log.Println(token.Username, "Token")
 		if client != nil {

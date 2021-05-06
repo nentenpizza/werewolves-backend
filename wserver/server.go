@@ -153,14 +153,14 @@ func (s *Server) runHandler(h HandlerFunc, c *Context) {
 
 // Listen is handler that upgrades http client to websocket client
 func (s *Server) Listen(c echo.Context) error {
-	var tok string
+	var tokenx *jwt.Token
 	var err error
 	if s.useJWT {
-		tok = c.Param("token")
+		tok := c.Param("token")
 		if tok == "" {
 			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
 		}
-		tokenx, err := jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		tokenx, err = jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return s.secret, nil
 		})
 		if err != nil {
@@ -175,11 +175,16 @@ func (s *Server) Listen(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	conn := NewConn(ws)
-	s.onConnect(conn, tok)
-	go s.keepAlive(conn, PongTimeout)
-	go s.reader(conn, tok)
+	s.Accept(ws, tokenx)
 	return nil
+}
+
+// Accept accepts connection and runs reader and keeps connection alive
+func (s *Server) Accept(ws *websocket.Conn, token *jwt.Token) {
+	conn := NewConn(ws)
+	s.onConnect(conn, token)
+	go s.keepAlive(conn, PongTimeout)
+	go s.reader(conn, token)
 }
 
 func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
@@ -205,13 +210,13 @@ func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
 	}
 }
 
-func (s *Server) onConnect(conn *Conn, token string) {
+func (s *Server) onConnect(conn *Conn, token *jwt.Token) {
 	ctx := NewContext(conn)
 	ctx.Set("token", token)
 	s.runOnConnectHandler(ctx)
 }
 
-func (s *Server) reader(conn *Conn, token string) {
+func (s *Server) reader(conn *Conn, token *jwt.Token) {
 	for {
 		ctx := NewContext(conn)
 		ctx.Set("token", token)
