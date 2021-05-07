@@ -4,7 +4,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
-	"log"
 )
 
 func (h *handler) OnJoinRoom(ctx *wserver.Context) error {
@@ -53,7 +52,6 @@ func (h *handler) OnStartGame(ctx *wserver.Context) error {
 	if client == nil {
 		return PlayerNotFoundErr
 	}
-	log.Println(client.Room())
 	room := client.Room()
 	if room == nil {
 		return NotInRoomRoom
