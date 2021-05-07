@@ -10,15 +10,17 @@ type Service interface {
 }
 
 type Handler struct {
-	DB *storage.DB
+	DB     *storage.DB
+	Secret []byte
 }
 
 type handler struct {
 	db *storage.DB
+	s  []byte
 }
 
 func NewHandler(h Handler) *handler {
-	return &handler{db: h.DB}
+	return &handler{db: h.DB, s: h.Secret}
 }
 
 func (h handler) Register(group *echo.Group, service Service) {

@@ -2,7 +2,7 @@ package websocket
 
 import (
 	"github.com/nentenpizza/werewolves/wserver"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func (h *handler) OnError(err error, ctx *wserver.Context) {
@@ -10,9 +10,14 @@ func (h *handler) OnError(err error, ctx *wserver.Context) {
 	if ok {
 		if err != nil {
 			if client.Player != nil {
-				log.Println(client.Name, client.Role, err, err.Error())
+				Logger.WithFields(log.Fields{
+					"client_name": client.Name,
+					"client_role": client.Role,
+				}).Error(err.Error())
 			} else {
-				log.Println(client, err, err.Error())
+				Logger.WithFields(log.Fields{
+					"client": client,
+				}).Error(err.Error())
 			}
 
 			e, k := err.(*ServerError)
@@ -23,6 +28,6 @@ func (h *handler) OnError(err error, ctx *wserver.Context) {
 		return
 	}
 	if err != nil {
-		log.Println(err, ctx)
+		Logger.WithField("context", ctx).Error(err.Error())
 	}
 }

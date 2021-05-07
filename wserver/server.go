@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/websocket"
-	"github.com/labstack/echo/v4"
-	"github.com/nentenpizza/werewolves/app"
-	j "github.com/nentenpizza/werewolves/jwt"
 	"log"
 	"net/http"
 	"sync"
@@ -149,34 +146,6 @@ func (s *Server) runHandler(h HandlerFunc, c *Context) {
 		}
 	}
 	f()
-}
-
-// Listen is handler that upgrades http client to websocket client
-func (s *Server) Listen(c echo.Context) error {
-	var tokenx *jwt.Token
-	var err error
-	if s.useJWT {
-		tok := c.Param("token")
-		if tok == "" {
-			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
-		}
-		tokenx, err = jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
-			return s.secret, nil
-		})
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, "bad token")
-		}
-		if !tokenx.Valid {
-			return c.JSON(http.StatusBadRequest, "bad token")
-		}
-
-	}
-	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
-	if err != nil {
-		return err
-	}
-	s.Accept(ws, tokenx)
-	return nil
 }
 
 // Accept accepts connection and runs reader and keeps connection alive

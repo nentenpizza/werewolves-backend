@@ -3,8 +3,15 @@ package websocket
 import (
 	"encoding/json"
 	"github.com/nentenpizza/werewolves/storage"
+	log "github.com/sirupsen/logrus"
 	"sync"
 )
+
+var Logger = log.New()
+
+func init() {
+	Logger.SetFormatter(&log.TextFormatter{})
+}
 
 type Clients struct {
 	clients map[string]*Client

@@ -1,0 +1,12 @@
+time="2021-05-08T01:00:16+03:00" level=info msg=connecting from_username=Nenten
+time="2021-05-08T01:00:20+03:00" level=info msg="incoming message" event="map[room_name:1620424820541 settings:map[]]" event_type=create_room from_username=Nenten
+time="2021-05-08T01:00:59+03:00" level=info msg="incoming message" event="map[]" event_type=leave_room from_username=Nenten
+time="2021-05-08T01:01:07+03:00" level=info msg="incoming message" event="map[]" event_type=join_room from_username=Nenten
+time="2021-05-08T01:01:07+03:00" level=error msg=RoomNotExistsErr client_name=Nenten client_role=
+time="2021-05-08T01:01:07+03:00" level=info msg="incoming message" event="map[room_name:1620424867801 settings:map[]]" event_type=create_room from_username=Nenten
+time="2021-05-08T01:01:08+03:00" level=info msg="incoming message" event="map[]" event_type=start_room from_username=Nenten
+time="2021-05-08T01:01:08+03:00" level=error msg=RoomStartErr client_name=Nenten client_role=
+time="2021-05-08T01:02:08+03:00" level=info msg="incoming message" event="map[]" event_type=leave_room from_username=Nenten
+time="2021-05-08T01:02:09+03:00" level=info msg="incoming message" event="map[room_name:1620424929679 settings:map[]]" event_type=create_room from_username=Nenten
+time="2021-05-08T01:03:18+03:00" level=info msg="incoming message" event="map[]" event_type=start_room from_username=Nenten
+time="2021-05-08T01:03:18+03:00" level=error msg=RoomStartErr client_name=Nenten client_role=
