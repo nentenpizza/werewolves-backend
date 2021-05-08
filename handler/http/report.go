@@ -23,13 +23,10 @@ func (s ReportsService) Report(c echo.Context) error {
 		Reason     string `json:"reason" validate:"required,min=3"`
 	}
 
-	err := c.Bind(&form)
-	if err != nil {
+	if err := c.Bind(&form); err != nil {
 		return err
 	}
-
-	err = c.Validate(&form)
-	if err != nil {
+	if err := c.Validate(&form); err != nil {
 		return err
 	}
 
@@ -39,12 +36,16 @@ func (s ReportsService) Report(c echo.Context) error {
 		return err
 	}
 
-	if exists, _ := s.db.Users.ExistsByID(form.ReportedID); !exists {
+	exists, err := s.db.Users.ExistsByID(form.ReportedID)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		return c.JSON(http.StatusBadRequest, app.Err("user does not exist"))
 	}
 
 	if form.ReportedID == user.ID {
-		return c.JSON(http.StatusBadRequest, app.Err("you cannot report myself"))
+		return c.JSON(http.StatusBadRequest, app.Err("you cannot report yourself"))
 	}
 
 	err = s.db.Reports.Create(storage.Report{

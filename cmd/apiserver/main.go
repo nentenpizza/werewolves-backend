@@ -90,13 +90,8 @@ func main() {
 	)
 
 	h.Register(
-		g.Group("/api/friends"),
-		http.FriendsStorage{},
-	)
-
-	h.Register(
 		g.Group("/api/inventory"),
-		http.InventoryService{},
+		http.ItemsService{},
 	)
 
 	e.Logger.Fatal(e.Start(":7070"))

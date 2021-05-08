@@ -24,13 +24,10 @@ func (s HonorsService) Honor(c echo.Context) error {
 		HonoredID int    `json:"honored_id" validate:"required"`
 		Reason    string `json:"reason" validate:"required"`
 	}
-	err := c.Bind(&form)
-
-	if err != nil {
+	if err := c.Bind(&form); err != nil {
 		return err
 	}
-	err = c.Validate(&form)
-	if err != nil {
+	if err := c.Validate(&form); err != nil {
 		return err
 	}
 
@@ -40,7 +37,11 @@ func (s HonorsService) Honor(c echo.Context) error {
 		return err
 	}
 
-	if exists, _ := s.db.Users.ExistsByID(form.HonoredID); !exists {
+	exists, err := s.db.Users.ExistsByID(form.HonoredID)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		return c.JSON(http.StatusBadRequest, app.Err("user does not exist"))
 	}
 
@@ -48,11 +49,19 @@ func (s HonorsService) Honor(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, app.Err("you cannot honor myself"))
 	}
 
-	if exists, _ := s.db.Honors.Exists(form.HonoredID, user.ID); exists {
+	exists, err = s.db.Honors.Exists(form.HonoredID, user.ID)
+	if err != nil {
+		return err
+	}
+	if exists {
 		return c.JSON(http.StatusForbidden, app.Err("you already honored this user"))
 	}
 
-	if count, _ := s.db.Honors.CountToday(user.ID); count > 10 {
+	count, err := s.db.Honors.CountToday(user.ID)
+	if err != nil {
+		return err
+	}
+	if count > 10 {
 		return c.JSON(http.StatusForbidden, app.Err("you reached daily limit"))
 	}
 

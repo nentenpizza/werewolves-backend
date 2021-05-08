@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/lib/pq"
 	"time"
 
 	//sq "github.com/Masterminds/squirrel"
@@ -15,8 +16,10 @@ type (
 		ByID(id int) (user User, _ error)
 		ExistsByID(id int) (exists bool, _ error)
 		ExistsByLogin(login string) (has bool, _ error)
+		Relations(User) (pq.Int64Array, error)
 		ByLogin(login string) (user User, _ error)
 		Update(user User) error
+		UpdateRelations(User, int) error
 	}
 
 	Users struct {
@@ -25,18 +28,19 @@ type (
 
 	// User represents user-account
 	User struct {
-		CreatedAt         time.Time `sq:"created_at,omitempty" json:"created_at"`
-		UpdatedAt         time.Time `sq:"updated_at,omitempty" json:"-"`
-		XP                int64     `db:"xp" sq:"xp,omitempty" json:"xp"`
-		ID                int       `db:"id" sq:"id" json:"id,omitempty" validate:"required,id"`
-		Email             string    `sq:"email" json:"email,omitempty" validate:"required,email"`
-		Login             string    `sq:"login" json:"-" validate:"required"`
-		Username          string    `sq:"username" json:"username" validate:"required"`
-		EncryptedPassword string    `db:"password_hash" sq:"password" json:"-"`
-		BannedUntil       time.Time `sq:"banned_until,omitempty" json:"banned_until"`
-		Avatar            string    `sq:"avatar" json:"avatar"`
-		Wins              int       `sq:"wins" json:"wins"`
-		Losses            int       `sq:"losses" json:"losses"`
+		CreatedAt         time.Time     `sq:"created_at,omitempty" json:"created_at"`
+		UpdatedAt         time.Time     `sq:"updated_at,omitempty" json:"-"`
+		XP                int64         `db:"xp" sq:"xp,omitempty" json:"xp"`
+		ID                int           `db:"id" sq:"id" json:"id,omitempty" validate:"required,id"`
+		Email             string        `sq:"email" json:"email,omitempty" validate:"required,email"`
+		Login             string        `sq:"login" json:"-" validate:"required"`
+		Username          string        `sq:"username" json:"username" validate:"required"`
+		Relations         pq.Int64Array `sq:"relations" json:"relations"`
+		EncryptedPassword string        `db:"password_hash" sq:"password" json:"-"`
+		BannedUntil       time.Time     `sq:"banned_until,omitempty" json:"banned_until"`
+		Avatar            string        `sq:"avatar" json:"avatar"`
+		Wins              int           `sq:"wins" json:"wins"`
+		Losses            int           `sq:"losses" json:"losses"`
 	}
 )
 
@@ -92,5 +96,16 @@ func (db Users) Update(user User) error {
 			avatar = :avatar
 		WHERE id = :id`
 	_, err := db.NamedExec(q, user)
+	return err
+}
+
+func (db Users) Relations(user User) (r pq.Int64Array, _ error) {
+	const q = "SELECT relations FROM users WHERE id = $1"
+	return r, db.Get(&r, q, user.ID)
+}
+
+func (db Users) UpdateRelations(user User, RelationshipID int) error {
+	const q = "UPDATE users SET relations = array_append(relations, $1) WHERE id = $2"
+	_, err := db.Exec(q, RelationshipID, user.ID)
 	return err
 }

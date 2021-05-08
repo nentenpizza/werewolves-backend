@@ -2,33 +2,32 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/nentenpizza/werewolves/app"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/storage"
 	"net/http"
 )
 
-type InventoryService struct {
+type ItemsService struct {
 	handler
 }
 
-func (s InventoryService) REGISTER(h handler, g *echo.Group) {
+func (s ItemsService) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
-	g.GET("/fetch", s.Fetch)
-	g.POST("/count", s.CountItem)
+	g.GET("/items", s.Items)
+	g.POST("/count", s.Count)
 	g.PUT("/item", s.Item)
 	g.DELETE("/item", s.ItemDelete)
 
 }
 
-func (s InventoryService) Fetch(c echo.Context) error {
+func (s ItemsService) Items(c echo.Context) error {
 	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
 
 	if err != nil {
 		return err
 	}
 
-	inv, err := s.db.Inventory.Fetch(user.ID)
+	inv, err := s.db.Items.Items(user.ID)
 
 	if err != nil {
 		return err
@@ -38,16 +37,14 @@ func (s InventoryService) Fetch(c echo.Context) error {
 
 }
 
-func (s InventoryService) Item(c echo.Context) error {
+func (s ItemsService) Item(c echo.Context) error {
 	var form struct {
 		Item string `json:"item" validate:"required"`
 	}
-	err := c.Bind(&form)
-	if err != nil {
+	if err := c.Bind(&form); err != nil {
 		return err
 	}
-	err = c.Validate(&form)
-	if err != nil {
+	if err := c.Validate(&form); err != nil {
 		return err
 	}
 
@@ -57,39 +54,37 @@ func (s InventoryService) Item(c echo.Context) error {
 		return err
 	}
 
-	inv := storage.Inventory{
-		Item:   form.Item,
+	inv := storage.Item{
+		Name:   form.Item,
 		UserID: user.ID,
 	}
 
-	count, err := s.db.Inventory.CountItem(inv)
+	count, err := s.db.Items.Count(inv)
 
 	if err != nil {
 		return err
 	}
 
-	err = s.db.Inventory.Create(inv)
+	err = s.db.Items.Create(inv)
 
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, app.OkWithField(count+1))
+	return c.JSON(http.StatusOK, echo.Map{"ok": count + 1})
 
 }
 
-func (s InventoryService) ItemDelete(c echo.Context) error {
+func (s ItemsService) ItemDelete(c echo.Context) error {
 	var form struct {
 		Item  string `json:"item" validate:"required"`
 		Count uint   `json:"count" validate:"required"`
 	}
 
-	err := c.Bind(&form)
-	if err != nil {
+	if err := c.Bind(&form); err != nil {
 		return err
 	}
-	err = c.Validate(&form)
-	if err != nil {
+	if err := c.Validate(&form); err != nil {
 		return err
 	}
 
@@ -99,35 +94,33 @@ func (s InventoryService) ItemDelete(c echo.Context) error {
 		return err
 	}
 
-	inv := storage.Inventory{
+	inv := storage.Item{
 		UserID: user.ID,
-		Item:   form.Item,
+		Name:   form.Item,
 	}
 
-	err = s.db.Inventory.Delete(inv, form.Count)
+	err = s.db.Items.Delete(inv, form.Count)
 	if err != nil {
 		return err
 	}
 
-	count, err := s.db.Inventory.CountItem(inv)
+	count, err := s.db.Items.Count(inv)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, app.OkWithField(count))
+	return c.JSON(http.StatusOK, echo.Map{"ok": count})
 
 }
 
-func (s InventoryService) CountItem(c echo.Context) error {
+func (s ItemsService) Count(c echo.Context) error {
 	var form struct {
 		Item string `json:"item" validate:"required"`
 	}
-	err := c.Bind(&form)
-	if err != nil {
+	if err := c.Bind(&form); err != nil {
 		return err
 	}
-	err = c.Validate(&form)
-	if err != nil {
+	if err := c.Validate(&form); err != nil {
 		return err
 	}
 
@@ -137,8 +130,8 @@ func (s InventoryService) CountItem(c echo.Context) error {
 		return err
 	}
 
-	count, err := s.db.Inventory.CountItem(storage.Inventory{
-		Item:   form.Item,
+	count, err := s.db.Items.Count(storage.Item{
+		Name:   form.Item,
 		UserID: user.ID,
 	})
 
@@ -146,6 +139,6 @@ func (s InventoryService) CountItem(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, app.OkWithField(count))
+	return c.JSON(http.StatusOK, echo.Map{"ok": count})
 
 }

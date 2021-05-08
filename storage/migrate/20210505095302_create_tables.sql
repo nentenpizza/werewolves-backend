@@ -12,6 +12,7 @@ create table users
     login         varchar(25)             not null,
     username      varchar(13) primary key not null,
     password_hash varchar(60)             not null,
+    relations     integer[]               not null default '{0}',
     avatar        varchar(68)             not null default 'guest',
     banned_until  timestamp               not null default now() - interval '1' day,
     wins          INTEGER                 not null default 0,
@@ -20,14 +21,12 @@ create table users
 
 --friends
 
-create table friends
+create table relationship
 (
-    id         bigserial not null,
-    created_at timestamp not null default now(),
-    sender_id  bigint    not null,
-    target_id  bigint    not null,
-    active     bool      not null
+    id      bigserial primary key not null,
+    user_id bigint                not null
 );
+
 
 -- honors
 
@@ -53,10 +52,10 @@ create table reports
 
 -- inventory
 
-create table inventory
+create table items
 (
     id      bigserial   not null,
-    item    varchar(50) not null,
+    name    varchar(50) not null,
     user_id bigint      not null
 );
 
