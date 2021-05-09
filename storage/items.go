@@ -6,7 +6,7 @@ type (
 	ItemsStorage interface {
 		Create(inv Item) error
 		Delete(inv Item, limit uint) error
-		Items(UserID int) ([]Item, error)
+		Items(UserID int64) ([]Item, error)
 		Count(Item) (int, error)
 	}
 
@@ -16,7 +16,7 @@ type (
 
 	Item struct {
 		ID     int    `json:"-" sq:"id"`
-		UserID int    `json:"user_id" sq:"user_id"`
+		UserID int64  `json:"user_id" sq:"user_id"`
 		Name   string `json:"name" sq:"name"`
 	}
 )
@@ -27,7 +27,7 @@ func (db Items) Create(inv Item) error {
 	return err
 }
 
-func (db Items) Items(UserID int) (i []Item, _ error) {
+func (db Items) Items(UserID int64) (i []Item, _ error) {
 	const q = "SELECT * FROM items WHERE user_id = $1"
 	return i, db.Select(&i, q, UserID)
 }

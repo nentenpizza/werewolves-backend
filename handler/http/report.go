@@ -19,7 +19,7 @@ func (s ReportsService) REGISTER(h handler, g *echo.Group) {
 
 func (s ReportsService) Report(c echo.Context) error {
 	var form struct {
-		ReportedID int    `json:"reported_id" validate:"required"`
+		ReportedID int64  `json:"reported_id" validate:"required"`
 		Reason     string `json:"reason" validate:"required,min=3"`
 	}
 

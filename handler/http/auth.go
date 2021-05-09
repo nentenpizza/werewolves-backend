@@ -137,6 +137,7 @@ func (s AuthService) Login(c echo.Context) error {
 
 	token := jwt.NewWithClaims(jwt.Claims{
 		Username: user.Username,
+		ID:       user.ID,
 	})
 
 	t, err := token.SignedString(s.Secret)

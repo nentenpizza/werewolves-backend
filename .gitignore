@@ -20,3 +20,5 @@
 *.VSCodeCounter
 
 *.vscode
+.env
+logs_*

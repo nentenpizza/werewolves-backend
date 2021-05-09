@@ -1,5 +1,7 @@
 -- +goose Up
 
+create database werewolves;
+
 -- users
 
 create table users
@@ -23,7 +25,7 @@ create table users
 
 create table relationship
 (
-    id      bigserial primary key not null,
+    id      bigserial    not null,
     user_id bigint                not null
 );
 
@@ -60,6 +62,10 @@ create table items
 );
 
 -- triggers
+create or replace function trigger_set_timestamp() returns trigger as $$ begin new.updated_at = now();
+return new;
+end;
+$$ language 'plpgsql';
 
 
 -- +goose Down

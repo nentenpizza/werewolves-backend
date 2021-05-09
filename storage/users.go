@@ -13,13 +13,13 @@ type (
 		Create(User) error
 		Exists(username string) (has bool, _ error)
 		ByUsername(username string) (user User, _ error)
-		ByID(id int) (user User, _ error)
-		ExistsByID(id int) (exists bool, _ error)
+		ByID(id int64) (user User, _ error)
+		ExistsByID(id int64) (exists bool, _ error)
 		ExistsByLogin(login string) (has bool, _ error)
 		Relations(User) (pq.Int64Array, error)
 		ByLogin(login string) (user User, _ error)
 		Update(user User) error
-		UpdateRelations(User, int) error
+		UpdateRelations(userID int64, relID int) error
 	}
 
 	Users struct {
@@ -31,7 +31,7 @@ type (
 		CreatedAt         time.Time     `sq:"created_at,omitempty" json:"created_at"`
 		UpdatedAt         time.Time     `sq:"updated_at,omitempty" json:"-"`
 		XP                int64         `db:"xp" sq:"xp,omitempty" json:"xp"`
-		ID                int           `db:"id" sq:"id" json:"id,omitempty" validate:"required,id"`
+		ID                int64         `db:"id" sq:"id" json:"id,omitempty" validate:"required,id"`
 		Email             string        `sq:"email" json:"email,omitempty" validate:"required,email"`
 		Login             string        `sq:"login" json:"-" validate:"required"`
 		Username          string        `sq:"username" json:"username" validate:"required"`
@@ -77,12 +77,12 @@ func (db Users) ByLogin(login string) (user User, _ error) {
 	return user, db.Get(&user, q, login)
 }
 
-func (db Users) ExistsByID(id int) (exists bool, _ error) {
+func (db Users) ExistsByID(id int64) (exists bool, _ error) {
 	const q = `select exists(select * from users where id = $1)`
 	return exists, db.Get(&exists, q, id)
 }
 
-func (db Users) ByID(id int) (user User, _ error) {
+func (db Users) ByID(id int64) (user User, _ error) {
 	const q = `select * from users where id = $1`
 	return user, db.Get(&user, q, id)
 }
@@ -104,8 +104,8 @@ func (db Users) Relations(user User) (r pq.Int64Array, _ error) {
 	return r, db.Get(&r, q, user.ID)
 }
 
-func (db Users) UpdateRelations(user User, RelationshipID int) error {
+func (db Users) UpdateRelations(userID int64, relID int) error {
 	const q = "UPDATE users SET relations = array_append(relations, $1) WHERE id = $2"
-	_, err := db.Exec(q, RelationshipID, user.ID)
+	_, err := db.Exec(q, relID, userID)
 	return err
 }

@@ -24,7 +24,9 @@ var phaseLength = flag.Int("phase", 5, "phase length in game")
 
 func main() {
 	flag.Parse()
+
 	werewolves.PhaseLength = time.Duration(*phaseLength) * time.Second
+
 	db, err := storage.Open(*PGURL)
 	if err != nil {
 		log.Fatal(err)
@@ -92,6 +94,11 @@ func main() {
 	h.Register(
 		g.Group("/api/inventory"),
 		http.ItemsService{},
+	)
+
+	h.Register(
+		g.Group("/api/friends"),
+		http.FriendsService{},
 	)
 
 	e.Logger.Fatal(e.Start(":7070"))

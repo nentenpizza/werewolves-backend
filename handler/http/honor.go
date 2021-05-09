@@ -15,13 +15,12 @@ type HonorsService struct {
 
 func (s HonorsService) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
-	g.Use()
 	g.POST("/send", s.Honor)
 }
 
 func (s HonorsService) Honor(c echo.Context) error {
 	var form struct {
-		HonoredID int    `json:"honored_id" validate:"required"`
+		HonoredID int64  `json:"honored_id" validate:"required"`
 		Reason    string `json:"reason" validate:"required"`
 	}
 	if err := c.Bind(&form); err != nil {
@@ -46,7 +45,7 @@ func (s HonorsService) Honor(c echo.Context) error {
 	}
 
 	if user.ID == form.HonoredID {
-		return c.JSON(http.StatusBadRequest, app.Err("you cannot honor myself"))
+		return c.JSON(http.StatusBadRequest, app.Err("you cannot honor yourself"))
 	}
 
 	exists, err = s.db.Honors.Exists(form.HonoredID, user.ID)

@@ -6,7 +6,7 @@ import (
 )
 
 type (
-	ReportsService interface {
+	ReportsStorage interface {
 		Create(Report) error
 	}
 
@@ -18,8 +18,8 @@ type (
 	Report struct {
 		ID         int       `json:"id" sq:"id"`
 		CreatedAt  time.Time `json:"created_at" sq:"created_at"`
-		ReportedID int       `json:"reported_id" sq:"reported_id"`
-		SenderID   int       `json:"sender_id" sq:"sender_id"`
+		ReportedID int64     `json:"reported_id" sq:"reported_id"`
+		SenderID   int64     `json:"sender_id" sq:"sender_id"`
 		Reason     string    `json:"reason" sq:"reason"`
 	}
 )

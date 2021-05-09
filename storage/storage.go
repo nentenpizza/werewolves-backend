@@ -17,9 +17,10 @@ func init() {
 type DB struct {
 	*sqlx.DB
 	Users   UsersStorage
-	Reports ReportsService
+	Reports ReportsStorage
 	Items   ItemsStorage
-	Honors  HonorService
+	Honors  HonorsStorage
+	Friends FriendsStorage
 }
 
 func Open(url string) (*DB, error) {
@@ -39,6 +40,7 @@ func Open(url string) (*DB, error) {
 		Items:   &Items{db},
 		Reports: &Reports{db},
 		Honors:  &Honors{db},
+		Friends: &Friends{db},
 	}, nil
 }
 
