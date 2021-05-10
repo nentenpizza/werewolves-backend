@@ -9,7 +9,7 @@ import (
 var FloodWaitDuration = 2 * time.Second
 var EmojiWaitDuration = 2 * time.Second
 
-func (h *handler) OnMessage(ctx wserver.Context) error {
+func (h *handler) OnMessage(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 
 	event := &MessageEvent{}
@@ -54,7 +54,7 @@ func (h *handler) OnMessage(ctx wserver.Context) error {
 	return nil
 }
 
-func (h *handler) OnEmote(ctx wserver.Context) error {
+func (h *handler) OnEmote(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client != nil {
 		if time.Now().Sub(client.EmojiWait) < EmojiWaitDuration {

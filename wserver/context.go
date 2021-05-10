@@ -12,6 +12,10 @@ type Context struct {
 	Update *Update
 }
 
+func NewContext(conn *Conn) *Context {
+	return &Context{Conn: conn, storage: make(map[string]interface{})}
+}
+
 func (c *Context) Set(key string, val interface{}) {
 	c.storage[key] = val
 }

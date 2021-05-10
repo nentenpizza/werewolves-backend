@@ -27,9 +27,9 @@ var upgrader = websocket.Upgrader{
 
 var PongTimeout = time.Second * 60
 
-type HandlerFunc func(ctx Context) error
+type HandlerFunc func(ctx *Context) error
 
-type OnErrorFunc func(error, Context)
+type OnErrorFunc func(error, *Context)
 
 type Update struct {
 	EventType string      `json:"event_type" mapstructure:"event_type"`
@@ -52,6 +52,7 @@ type Server struct {
 	useJWT   bool
 	secret   []byte
 	claims   jwt.Claims
+	group    *Group
 }
 
 type Conn struct {
@@ -98,13 +99,20 @@ func NewServer(s Settings) *Server {
 	if s.UseJWT && len(s.Secret) < 1 {
 		panic("wserver: secret can not be empty string if UseJWT enabled")
 	}
-	return &Server{
+	serv := &Server{
 		useJWT:   s.UseJWT,
 		OnError:  s.OnError,
 		handlers: make(map[interface{}]HandlerFunc),
 		secret:   s.Secret,
 		claims:   s.Claims,
 	}
+	serv.group = &Group{s: serv, middleware: make([]MiddlewareFunc, 0, 1)}
+	return serv
+}
+
+// Use adds middleware to the global server chain.
+func (s *Server) Use(middleware ...MiddlewareFunc) {
+	s.group.Use(middleware...)
 }
 
 func applyMiddleware(h HandlerFunc, middleware ...MiddlewareFunc) HandlerFunc {
@@ -114,20 +122,23 @@ func applyMiddleware(h HandlerFunc, middleware ...MiddlewareFunc) HandlerFunc {
 	return h
 }
 
-func (s *Server) Handle(eventType interface{}, h HandlerFunc, middleware ...MiddlewareFunc) {
+func (s *Server) Handle(eventType interface{}, h HandlerFunc, m ...MiddlewareFunc) {
+	if len(s.group.middleware) > 0 {
+		m = append(s.group.middleware, m...)
+	}
 	switch eventType.(type) {
 	case int:
 		break
 	case string:
 		break
 	default:
-		panic("wserver: unsupported eventType")
+		panic("wserver: unsupported event_type")
 	}
-	h = applyMiddleware(h, middleware...)
-	s.handlers[eventType] = h
+	handler := func(c *Context) error { return applyMiddleware(h, m...)(c) }
+	s.handlers[eventType] = handler
 }
 
-func (s *Server) runHandler(h HandlerFunc, c Context) {
+func (s *Server) runHandler(h HandlerFunc, c *Context) {
 	f := func() {
 		if err := h(c); err != nil {
 			if s.OnError != nil {
@@ -142,14 +153,14 @@ func (s *Server) runHandler(h HandlerFunc, c Context) {
 
 // Listen is handler that upgrades http client to websocket client
 func (s *Server) Listen(c echo.Context) error {
-	var tok string
+	var tokenx *jwt.Token
 	var err error
 	if s.useJWT {
-		tok = c.Param("token")
+		tok := c.Param("token")
 		if tok == "" {
 			return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
 		}
-		tokenx, err := jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		tokenx, err = jwt.ParseWithClaims(tok, &j.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return s.secret, nil
 		})
 		if err != nil {
@@ -164,10 +175,16 @@ func (s *Server) Listen(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	conn := NewConn(ws)
-	go s.keepAlive(conn, PongTimeout)
-	go s.reader(conn, tok)
+	s.Accept(ws, tokenx)
 	return nil
+}
+
+// Accept accepts connection and runs reader and keeps connection alive
+func (s *Server) Accept(ws *websocket.Conn, token *jwt.Token) {
+	conn := NewConn(ws)
+	s.onConnect(conn, token)
+	go s.keepAlive(conn, PongTimeout)
+	go s.reader(conn, token)
 }
 
 func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
@@ -186,19 +203,22 @@ func (s *Server) keepAlive(conn *Conn, timeout time.Duration) {
 			log.Printf("Ping don't get response, disconnecting to %s", conn.conn.LocalAddr())
 			err = conn.Close()
 			if s.OnError != nil {
-				s.OnError(err, Context{})
+				s.OnError(err, nil)
 			}
 			return
 		}
 	}
 }
 
-func (s *Server) reader(conn *Conn, token string) {
-	ctx := Context{Conn: conn, storage: make(map[string]interface{})}
+func (s *Server) onConnect(conn *Conn, token *jwt.Token) {
+	ctx := NewContext(conn)
 	ctx.Set("token", token)
 	s.runOnConnectHandler(ctx)
+}
+
+func (s *Server) reader(conn *Conn, token *jwt.Token) {
 	for {
-		ctx := Context{Conn: conn, storage: make(map[string]interface{})}
+		ctx := NewContext(conn)
 		ctx.Set("token", token)
 		_, msg, err := conn.conn.ReadMessage()
 		if err != nil {
@@ -211,21 +231,21 @@ func (s *Server) reader(conn *Conn, token string) {
 	}
 }
 
-func (s Server) runOnDisconnectHandler(ctx Context) {
+func (s Server) runOnDisconnectHandler(ctx *Context) {
 	h, ok := s.handlers[OnDisconnect]
 	if ok {
 		s.runHandler(h, ctx)
 	}
 }
 
-func (s *Server) runOnConnectHandler(ctx Context) {
+func (s *Server) runOnConnectHandler(ctx *Context) {
 	h, ok := s.handlers[OnConnect]
 	if ok {
 		s.runHandler(h, ctx)
 	}
 }
 
-func (s *Server) processUpdate(msg []byte, c Context) {
+func (s *Server) processUpdate(msg []byte, c *Context) {
 	u := &Update{}
 	err := json.Unmarshal(msg, u)
 	if err != nil {

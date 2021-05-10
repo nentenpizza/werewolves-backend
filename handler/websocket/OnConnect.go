@@ -4,7 +4,7 @@ import (
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
-func (h *handler) OnConnect(ctx wserver.Context) error {
+func (h *handler) OnConnect(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client != nil {
 		if len(client.Unreached) > 1 {

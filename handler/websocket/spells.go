@@ -5,7 +5,7 @@ import (
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
-func (h *handler) OnSkill(ctx wserver.Context) error {
+func (h *handler) OnSkill(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr

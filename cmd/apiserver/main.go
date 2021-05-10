@@ -20,7 +20,7 @@ var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd")
 
 var PGURL = flag.String("PG_URL", os.Getenv("PG_URL"), "url to your postgres db")
 
-var phaseLength = flag.Int("phase", 5, "phase length in game")
+var phaseLength = flag.Int("phase", 30, "phase length in game")
 
 func main() {
 	flag.Parse()
@@ -48,15 +48,16 @@ func main() {
 
 	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
 
-	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame, wsHandler.WebsocketJWT())
-	server.Handle(wserver.OnConnect, wsHandler.OnConnect, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeVote, wsHandler.OnVote, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill, wsHandler.WebsocketJWT())
-	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote, wsHandler.WebsocketJWT())
+	server.Use(wsHandler.WebsocketJWT)
+	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom)
+	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom)
+	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom)
+	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame)
+	server.Handle(wserver.OnConnect, wsHandler.OnConnect)
+	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage)
+	server.Handle(websocket.EventTypeVote, wsHandler.OnVote)
+	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)
+	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote)
 
 	h := http.NewHandler(
 		http.Handler{
@@ -78,7 +79,7 @@ func main() {
 	)
 	h.Register(
 		e.Group("/api/game"),
-		http.GameService{},
+		http.GameService{PhaseLength: *phaseLength},
 	)
 
 	h.Register(

@@ -115,7 +115,3 @@ type (
 		PlayerID string `json:"player_id,omitempty" mapstructure:"player_id"`
 	}
 )
-
-var EventsWithTypes = map[string]interface{}{
-	EventTypeStartGame: Event{},
-}

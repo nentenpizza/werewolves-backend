@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func (h *handler) OnVote(ctx wserver.Context) error {
+func (h *handler) OnVote(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr

@@ -2,7 +2,7 @@ package websocket
 
 import "github.com/nentenpizza/werewolves/wserver"
 
-func (h *handler) OnDisconnect(ctx wserver.Context) error {
+func (h *handler) OnDisconnect(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
