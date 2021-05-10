@@ -47,7 +47,7 @@ func (s AuthService) Register(c echo.Context) error {
 		return c.JSON(http.StatusConflict, app.Err("username already taken"))
 	}
 
-	exists, err = s.db.Users.ExistsByLogin(form.Username)
+	exists, err = s.db.Users.ExistsByLogin(form.Login)
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,8 @@ func (s AuthService) Register(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	c.JSON(http.StatusCreated, u)
-	return err
+	return c.JSON(http.StatusCreated, u)
+
 }
 
 func (s AuthService) validateUsername(username string) bool {
@@ -137,6 +137,7 @@ func (s AuthService) Login(c echo.Context) error {
 
 	token := jwt.NewWithClaims(jwt.Claims{
 		Username: user.Username,
+		ID:       user.ID,
 	})
 
 	t, err := token.SignedString(s.Secret)

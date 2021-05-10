@@ -40,6 +40,6 @@ jobs:
           script: |
             cd ~/werewolves-backend
             sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} docker.pkg.github.com
-            sudo docker pull ${{ steps.vars.outputs.pkg }}:${{ steps.vars.outputs.tag }}
+            sudo docker pull ${{ steps.vars.outputs.pkg }}:latest
             sudo docker-compose down
             sudo docker-compose up -d

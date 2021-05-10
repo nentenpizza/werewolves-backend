@@ -23,13 +23,11 @@ func (h *handler) OnMessage(ctx *wserver.Context) error {
 			event.Username = client.Token.Username
 			ctx.Update.Data = event
 			if time.Now().Sub(client.FloodWait) < FloodWaitDuration {
-
-				client.WriteJSON(Event{
+				return client.WriteJSON(Event{
 					EventTypeFloodWait,
 					EventFloodWait{
 						int64((FloodWaitDuration-time.Since(client.FloodWait))/time.Second) + 1},
 				})
-				return nil
 			}
 			if len([]rune(event.Text)) > 160 {
 				return NotAllowedErr
@@ -60,12 +58,11 @@ func (h *handler) OnEmote(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client != nil {
 		if time.Now().Sub(client.EmojiWait) < EmojiWaitDuration {
-			client.WriteJSON(Event{
+			return client.WriteJSON(Event{
 				EventTypeFloodWait,
 				EventFloodWait{
 					int64((EmojiWaitDuration-time.Since(client.EmojiWait))/time.Second) + 1},
 			})
-			return nil
 		}
 
 		event := &EmoteEvent{}

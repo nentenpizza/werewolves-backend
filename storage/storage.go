@@ -16,7 +16,11 @@ func init() {
 
 type DB struct {
 	*sqlx.DB
-	Users UsersStorage
+	Users   UsersStorage
+	Reports ReportsStorage
+	Items   ItemsStorage
+	Honors  HonorsStorage
+	Friends FriendsStorage
 }
 
 func Open(url string) (*DB, error) {
@@ -31,8 +35,12 @@ func Open(url string) (*DB, error) {
 	db.SetMaxOpenConns(100)
 
 	return &DB{
-		DB:    db,
-		Users: &Users{db},
+		DB:      db,
+		Users:   &Users{db},
+		Items:   &Items{db},
+		Reports: &Reports{db},
+		Honors:  &Honors{db},
+		Friends: &Friends{db},
 	}, nil
 }
 
