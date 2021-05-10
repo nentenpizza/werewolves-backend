@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/handler/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/nentenpizza/werewolves/validator"
 	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -37,6 +39,13 @@ func main() {
 	}
 	defer db.Close()
 
+	logFile, err := os.Create(fmt.Sprintf("logs_%d", time.Now().Unix()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+	websocket.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
+
 	wsHandler := websocket.NewHandler(
 		websocket.Handler{DB: db,
 			Clients: websocket.NewClients(
@@ -49,7 +58,7 @@ func main() {
 
 	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
 
-	server.Use(wsHandler.WebsocketJWT)
+	server.Use(wsHandler.WebsocketJWT, wsHandler.Logger)
 	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom)
 	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom)
 	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom)
@@ -65,12 +74,12 @@ func main() {
 		http.Handler{
 			DB:          db,
 			AuthService: &service.Auth{Service: serv},
+			Secret:      uuid,
 		},
 	)
 	e := newEcho()
 	//e.GET("/ws/:token", server.WsEndpoint)
 	g := e.Group("", newJWTMiddleware())
-	e.GET("/ws/:token", server.Listen)
 	e.Static("/files", "assets")
 
 	h.Register(
@@ -81,8 +90,23 @@ func main() {
 		http.UsersService{},
 	)
 	h.Register(
-		e.Group("/api/game"),
-		http.GameService{PhaseLength: *phaseLength},
+		e.Group(""),
+		http.GameService{PhaseLength: *phaseLength, Serv: server},
+	)
+
+	h.Register(
+		g.Group("/api/reports"),
+		http.ReportsService{},
+	)
+
+	h.Register(
+		g.Group("/api/honors"),
+		http.HonorsService{},
+	)
+
+	h.Register(
+		g.Group("/api/inventory"),
+		http.ItemsService{},
 	)
 
 	h.Register(

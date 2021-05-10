@@ -13,15 +13,17 @@ type EndpointGroup interface {
 type Handler struct {
 	DB          *storage.DB
 	AuthService service.AuthService
+	Secret      []byte
 }
 
 type handler struct {
 	db          *storage.DB
 	authService service.AuthService
+	s           []byte
 }
 
 func NewHandler(h Handler) *handler {
-	return &handler{db: h.DB, authService: h.AuthService}
+	return &handler{db: h.DB, authService: h.AuthService, s: h.Secret}
 }
 
 func (h handler) Register(group *echo.Group, eg EndpointGroup) {

@@ -5,7 +5,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	j "github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/wserver"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func (h *handler) WebsocketJWT(next wserver.HandlerFunc) wserver.HandlerFunc {
@@ -16,7 +16,6 @@ func (h *handler) WebsocketJWT(next wserver.HandlerFunc) wserver.HandlerFunc {
 		}
 		token := j.From(tok)
 		client := h.c.Read(token.Username)
-		log.Println(token.Username, "Token")
 		if client != nil {
 			client.conn = c.Conn
 			if client.Token.Username == "" {
@@ -27,6 +26,31 @@ func (h *handler) WebsocketJWT(next wserver.HandlerFunc) wserver.HandlerFunc {
 			h.c.Write(client.Token.Username, client)
 		}
 		c.Set("client", client)
+		return next(c)
+	}
+}
+
+func (h *handler) Logger(next wserver.HandlerFunc) wserver.HandlerFunc {
+	return func(c *wserver.Context) error {
+		client, ok := c.Get("client").(*Client)
+		if ok {
+			if c.Update != nil {
+				Logger.WithFields(log.Fields{
+					"event_type":    c.Update.EventType,
+					"event":         c.Update.Data,
+					"from_username": client.Token.Username,
+				}).Info("incoming message")
+			} else {
+				Logger.WithFields(log.Fields{
+					"from_username": client.Token.Username,
+				}).Info("connecting")
+			}
+		} else {
+			Logger.WithFields(log.Fields{
+				"event_type": c.Update.EventType,
+				"event":      c.Update.Data,
+			}).Info("incoming message")
+		}
 		return next(c)
 	}
 }

@@ -37,7 +37,6 @@ func (s AuthEndpointGroup) Register(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, app.Ok())
-
 }
 
 // Login is endpoint for logging in
@@ -57,6 +56,7 @@ func (s AuthEndpointGroup) Login(c echo.Context) error {
 		}
 		return err
 	}
+
 	return c.JSON(200, echo.Map{"token": t})
 }
 
