@@ -7,6 +7,7 @@ import (
 	"github.com/nentenpizza/werewolves/handler/http"
 	"github.com/nentenpizza/werewolves/handler/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
+	"github.com/nentenpizza/werewolves/service"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
 	"github.com/nentenpizza/werewolves/werewolves"
@@ -59,9 +60,11 @@ func main() {
 	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)
 	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote)
 
+	serv := service.NewService(db)
 	h := http.NewHandler(
 		http.Handler{
-			DB: db,
+			DB:          db,
+			AuthService: &service.Auth{Service: serv},
 		},
 	)
 	e := newEcho()
@@ -72,7 +75,7 @@ func main() {
 
 	h.Register(
 		e.Group("/api/auth"),
-		http.AuthService{Secret: uuid})
+		http.AuthEndpointGroup{Secret: uuid})
 	h.Register(
 		g.Group("/api/users"),
 		http.UsersService{},
