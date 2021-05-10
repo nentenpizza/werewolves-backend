@@ -26,6 +26,20 @@ func (s FriendsService) Request(c echo.Context) error {
 		return err
 	}
 	claims := jwt.From(c.Get("user"))
+	if form.Receiver == claims.ID {
+		return c.JSON(http.StatusBadRequest, app.Err("you cannot request yourself"))
+	}
+	me, err := s.db.Users.ByID(claims.ID)
+	if err != nil {
+		return err
+	}
+	has, err := s.db.Friends.IsFriend(me.Relations, form.Receiver)
+	if err != nil {
+		return err
+	}
+	if has {
+		return c.JSON(http.StatusConflict, app.Err("receiver already your friend"))
+	}
 	id, err := s.db.Friends.Create(claims.ID)
 	if err != nil {
 		return err

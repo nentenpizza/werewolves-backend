@@ -10,6 +10,7 @@ type (
 		Create(userID int64) (id int, _ error)
 		UsersByID(relationIDs pq.Int64Array, userID int64) (users []User, _ error)
 		Accept(userID int64, relID int) error
+		IsFriend(relationIDs pq.Int64Array, friendID int64) (has bool, _ error)
 	}
 
 	Friends struct {
@@ -54,4 +55,15 @@ func (db *Friends) UsersByID(relationIDs pq.Int64Array, userID int64) (users []U
 		return nil, err
 	}
 	return users, db.Select(&users, db.Rebind(query), args...)
+}
+
+func (db *Friends) IsFriend(relationIDs pq.Int64Array, friendID int64) (has bool, _ error) {
+	const q = `select 
+       exists(select user_id from relationship where $2 in (select user_id from relationship where id = any(?)));
+	`
+	query, args, err := sqlx.In(q, relationIDs, friendID)
+	if err != nil {
+		return false, err
+	}
+	return has, db.Get(&has, db.Rebind(query), args...)
 }

@@ -25,6 +25,8 @@ create table users
 
 create table relationship
 (
+    created_at    timestamp               not null default now(),
+    updated_at    timestamp               not null default now(),
     id      bigserial    not null,
     user_id bigint                not null
 );
@@ -34,8 +36,9 @@ create table relationship
 
 create table honors
 (
-    id         bigserial   not null,
-    created_at timestamp   not null default now(),
+    id         bigserial primary key   not null,
+    created_at    timestamp               not null default now(),
+    updated_at    timestamp               not null default now(),
     honored_id bigint      not null,
     reason     varchar(50) not null,
     sender_id  bigint      not null
@@ -46,7 +49,8 @@ create table honors
 create table reports
 (
     id          bigserial   not null,
-    created_at  timestamp   not null default now(),
+    created_at    timestamp               not null default now(),
+    updated_at    timestamp               not null default now(),
     reported_id bigint      not null,
     reason      varchar(50) not null,
     sender_id   bigint      not null
@@ -56,6 +60,8 @@ create table reports
 
 create table items
 (
+    created_at    timestamp               not null default now(),
+    updated_at    timestamp               not null default now(),
     id      bigserial   not null,
     name    varchar(50) not null,
     user_id bigint      not null
