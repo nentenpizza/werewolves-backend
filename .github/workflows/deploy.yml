@@ -18,6 +18,10 @@ jobs:
         run: |
           echo ::set-output name=pkg::"docker.pkg.github.com/nentenpizza/werewolves-backend/werewolves-backend"
           echo ::set-output name=tag::$(git rev-parse --short HEAD)
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_PG_URL: ${{ secrets.PG_URL }}
       - name: Push container
         run: |
           sudo docker login docker.pkg.github.com -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.PAT }}

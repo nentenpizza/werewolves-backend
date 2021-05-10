@@ -4,7 +4,7 @@ import (
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -102,9 +102,12 @@ func (c *Client) WriteJSON(i interface{}) error {
 	}
 	if err != nil {
 		c.Unreached = append(c.Unreached, i)
-		log.Println(c.Token.Username, "unreached", i)
+		Logger.WithFields(log.Fields{
+			"username":  c.Token.Username,
+			"unreached": i,
+			"room":      c.Room(),
+		}).Info("Failed to send event")
 	}
-	log.Println(i)
 	return err
 }
 
@@ -112,7 +115,7 @@ func (c *Client) SendUnreached() {
 	if len(c.Unreached) > 0 {
 		for _, e := range c.Unreached {
 			c.WriteJSON(e)
-			log.Println("sent unreached to", c.Token.Username, "|", e)
+			Logger.WithField(c.Token.Username, e).Info("Sent unreached")
 		}
 	}
 	c.Unreached = make([]interface{}, 0)
