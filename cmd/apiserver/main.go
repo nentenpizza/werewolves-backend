@@ -47,7 +47,8 @@ func main() {
 	websocket.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
 
 	wsHandler := websocket.NewHandler(
-		websocket.Handler{DB: db,
+		websocket.Handler{
+			DB: db,
 			Clients: websocket.NewClients(
 				make(map[string]*websocket.Client),
 			),
@@ -72,9 +73,12 @@ func main() {
 	serv := service.NewService(db)
 	h := http.NewHandler(
 		http.Handler{
-			DB:          db,
-			AuthService: &service.Auth{Service: serv},
-			Secret:      uuid,
+			DB:            db,
+			Secret:        uuid,
+			AuthService:   &service.Auth{Service: serv},
+			ReportService: &service.Reports{Service: serv},
+			HonorService:  &service.Honors{Service: serv},
+			FriendService: &service.Friends{Service: serv},
 		},
 	)
 	e := newEcho()
@@ -84,49 +88,34 @@ func main() {
 
 	h.Register(
 		e.Group("/api/auth"),
-		http.AuthEndpointGroup{Secret: uuid})
+		http.AuthEndpointGroup{})
 	h.Register(
 		g.Group("/api/users"),
-		http.UsersService{},
+		http.UsersEndpointGroup{},
 	)
 	h.Register(
 		e.Group(""),
-		http.GameService{PhaseLength: *phaseLength, Serv: server},
+		http.GameEndpointGroup{PhaseLength: *phaseLength, Serv: server},
 	)
 
 	h.Register(
 		g.Group("/api/reports"),
-		http.ReportsService{},
+		http.ReportsEndpointGroup{},
 	)
 
 	h.Register(
 		g.Group("/api/honors"),
-		http.HonorsService{},
+		http.HonorsEndpointGroup{},
 	)
 
 	h.Register(
 		g.Group("/api/inventory"),
-		http.ItemsService{},
-	)
-
-	h.Register(
-		g.Group("/api/reports"),
-		http.ReportsService{},
-	)
-
-	h.Register(
-		g.Group("/api/honors"),
-		http.HonorsService{},
-	)
-
-	h.Register(
-		g.Group("/api/inventory"),
-		http.ItemsService{},
+		http.ItemsEndpointGroup{},
 	)
 
 	h.Register(
 		g.Group("/api/friends"),
-		http.FriendsService{},
+		http.FriendsEndpointGroup{},
 	)
 
 	e.Logger.Fatal(e.Start(":7070"))

@@ -7,11 +7,11 @@ import (
 	"net/http"
 )
 
-type ItemsService struct {
+type ItemsEndpointGroup struct {
 	handler
 }
 
-func (s ItemsService) REGISTER(h handler, g *echo.Group) {
+func (s ItemsEndpointGroup) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
 	g.GET("/items", s.Items)
 	g.POST("/count", s.Count)
@@ -20,7 +20,7 @@ func (s ItemsService) REGISTER(h handler, g *echo.Group) {
 
 }
 
-func (s ItemsService) Items(c echo.Context) error {
+func (s ItemsEndpointGroup) Items(c echo.Context) error {
 	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
 
 	if err != nil {
@@ -37,7 +37,7 @@ func (s ItemsService) Items(c echo.Context) error {
 
 }
 
-func (s ItemsService) Item(c echo.Context) error {
+func (s ItemsEndpointGroup) Item(c echo.Context) error {
 	var form struct {
 		Item string `json:"item" validate:"required"`
 	}
@@ -75,7 +75,7 @@ func (s ItemsService) Item(c echo.Context) error {
 
 }
 
-func (s ItemsService) ItemDelete(c echo.Context) error {
+func (s ItemsEndpointGroup) ItemDelete(c echo.Context) error {
 	var form struct {
 		Item  string `json:"item" validate:"required"`
 		Count uint   `json:"count" validate:"required"`
@@ -113,7 +113,7 @@ func (s ItemsService) ItemDelete(c echo.Context) error {
 
 }
 
-func (s ItemsService) Count(c echo.Context) error {
+func (s ItemsEndpointGroup) Count(c echo.Context) error {
 	var form struct {
 		Item string `json:"item" validate:"required"`
 	}

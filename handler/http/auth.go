@@ -9,7 +9,6 @@ import (
 
 type AuthEndpointGroup struct {
 	handler
-	Secret []byte
 }
 
 func (s AuthEndpointGroup) REGISTER(h handler, g *echo.Group) {
@@ -48,7 +47,7 @@ func (s AuthEndpointGroup) Login(c echo.Context) error {
 	if err := c.Validate(&form); err != nil {
 		return err
 	}
-	t, err := s.authService.SignIn(form, s.Secret)
+	t, err := s.authService.SignIn(form, s.secret)
 	if err != nil {
 		serviceErr, ok := err.(*service.Error)
 		if ok {
