@@ -17,6 +17,7 @@ type Handler struct {
 	ReportService service.ReportService
 	HonorService  service.HonorService
 	FriendService service.FriendService
+	ItemService   service.ItemService
 }
 
 type handler struct {
@@ -26,6 +27,7 @@ type handler struct {
 	reportService service.ReportService
 	honorService  service.HonorService
 	friendService service.FriendService
+	itemService   service.ItemService
 }
 
 func NewHandler(h Handler) *handler {
@@ -36,6 +38,7 @@ func NewHandler(h Handler) *handler {
 		reportService: h.ReportService,
 		honorService:  h.HonorService,
 		friendService: h.FriendService,
+		itemService:   h.ItemService,
 	}
 }
 

@@ -79,6 +79,7 @@ func main() {
 			ReportService: &service.Reports{Service: serv},
 			HonorService:  &service.Honors{Service: serv},
 			FriendService: &service.Friends{Service: serv},
+			ItemService:   &service.Items{Service: serv},
 		},
 	)
 	e := newEcho()

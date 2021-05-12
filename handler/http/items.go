@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/jwt"
-	"github.com/nentenpizza/werewolves/storage"
+	"github.com/nentenpizza/werewolves/service"
 	"net/http"
 )
 
@@ -21,19 +21,12 @@ func (s ItemsEndpointGroup) REGISTER(h handler, g *echo.Group) {
 }
 
 func (s ItemsEndpointGroup) Items(c echo.Context) error {
-	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
-
+	items, err := s.db.Items.Items(jwt.From(c.Get("user")).ID)
 	if err != nil {
 		return err
 	}
 
-	inv, err := s.db.Items.Items(user.ID)
-
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, inv)
+	return c.JSON(http.StatusOK, echo.Map{"items": items})
 
 }
 
@@ -48,30 +41,16 @@ func (s ItemsEndpointGroup) Item(c echo.Context) error {
 		return err
 	}
 
-	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
-
+	count, err := s.itemService.GiveItem(jwt.From(c.Get("user")).ID, form.Item)
 	if err != nil {
+		serviceErr, ok := err.(*service.Error)
+		if ok {
+			return c.JSON(serviceErr.Code, serviceErr.Error())
+		}
 		return err
 	}
 
-	inv := storage.Item{
-		Name:   form.Item,
-		UserID: user.ID,
-	}
-
-	count, err := s.db.Items.Count(inv)
-
-	if err != nil {
-		return err
-	}
-
-	err = s.db.Items.Create(inv)
-
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{"ok": count + 1})
+	return c.JSON(http.StatusOK, echo.Map{"count": count})
 
 }
 
@@ -88,28 +67,15 @@ func (s ItemsEndpointGroup) ItemDelete(c echo.Context) error {
 		return err
 	}
 
-	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
-
+	count, err := s.itemService.DeleteItem(jwt.From(c.Get("user")).ID, form.Item, form.Count)
 	if err != nil {
+		serviceErr, ok := err.(*service.Error)
+		if ok {
+			return c.JSON(serviceErr.Code, serviceErr.Error())
+		}
 		return err
 	}
-
-	inv := storage.Item{
-		UserID: user.ID,
-		Name:   form.Item,
-	}
-
-	err = s.db.Items.Delete(inv, form.Count)
-	if err != nil {
-		return err
-	}
-
-	count, err := s.db.Items.Count(inv)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{"ok": count})
+	return c.JSON(http.StatusOK, echo.Map{"count": count})
 
 }
 
@@ -124,21 +90,15 @@ func (s ItemsEndpointGroup) Count(c echo.Context) error {
 		return err
 	}
 
-	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
-
+	count, err := s.itemService.Count(jwt.From(c.Get("user")).ID, form.Item)
 	if err != nil {
+		serviceErr, ok := err.(*service.Error)
+		if ok {
+			return c.JSON(serviceErr.Code, serviceErr.Error())
+		}
 		return err
 	}
 
-	count, err := s.db.Items.Count(storage.Item{
-		Name:   form.Item,
-		UserID: user.ID,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{"ok": count})
+	return c.JSON(http.StatusOK, echo.Map{"count": count})
 
 }
