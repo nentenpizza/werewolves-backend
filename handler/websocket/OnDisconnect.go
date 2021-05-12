@@ -11,6 +11,14 @@ func (h *handler) OnDisconnect(ctx *wserver.Context) error {
 		h.c.Delete(client.Token.Username)
 		return nil
 	}
-	client.Room().BroadcastEvent(Event{Type: EventTypeDisconnected, Data: EventPlayerID{PlayerID: client.Token.Username}})
+	if room := client.Room(); room != nil {
+		err := room.RemovePlayer(client.ID)
+		if err != nil {
+			return err
+		}
+		room.BroadcastEvent(Event{Type: EventTypeDisconnected,
+			Data: EventPlayerID{PlayerID: client.Token.Username}})
+	}
+
 	return nil
 }
