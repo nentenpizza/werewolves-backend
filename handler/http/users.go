@@ -8,17 +8,17 @@ import (
 	"net/http"
 )
 
-type UsersService struct {
+type UsersEndpointGroup struct {
 	handler
 }
 
-func (s UsersService) REGISTER(h handler, g *echo.Group) {
+func (s UsersEndpointGroup) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
 	g.GET("/me", s.Me)
 	g.POST("/user", s.GetUser)
 }
 
-func (s UsersService) Me(c echo.Context) error {
+func (s UsersEndpointGroup) Me(c echo.Context) error {
 	token := jwt.From(c.Get("user"))
 
 	user, err := s.db.Users.ByUsername(token.Username)
@@ -29,7 +29,7 @@ func (s UsersService) Me(c echo.Context) error {
 	return c.JSON(200, user)
 }
 
-func (s UsersService) GetUser(c echo.Context) error {
+func (s UsersEndpointGroup) GetUser(c echo.Context) error {
 	var form struct {
 		Username string `json:"username"`
 	}

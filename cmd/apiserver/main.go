@@ -8,6 +8,7 @@ import (
 	"github.com/nentenpizza/werewolves/handler/http"
 	"github.com/nentenpizza/werewolves/handler/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
+	"github.com/nentenpizza/werewolves/service"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
 	"github.com/nentenpizza/werewolves/werewolves"
@@ -46,7 +47,8 @@ func main() {
 	websocket.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
 
 	wsHandler := websocket.NewHandler(
-		websocket.Handler{DB: db,
+		websocket.Handler{
+			DB: db,
 			Clients: websocket.NewClients(
 				make(map[string]*websocket.Client),
 			),
@@ -68,10 +70,16 @@ func main() {
 	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)
 	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote)
 
+	serv := service.NewService(db)
 	h := http.NewHandler(
 		http.Handler{
-			DB:     db,
-			Secret: uuid,
+			DB:            db,
+			Secret:        uuid,
+			AuthService:   &service.Auth{Service: serv},
+			ReportService: &service.Reports{Service: serv},
+			HonorService:  &service.Honors{Service: serv},
+			FriendService: &service.Friends{Service: serv},
+			ItemService:   &service.Items{Service: serv},
 		},
 	)
 	e := newEcho()
@@ -81,34 +89,34 @@ func main() {
 
 	h.Register(
 		e.Group("/api/auth"),
-		http.AuthService{Secret: uuid})
+		http.AuthEndpointGroup{})
 	h.Register(
 		g.Group("/api/users"),
-		http.UsersService{},
+		http.UsersEndpointGroup{},
 	)
 	h.Register(
 		e.Group(""),
-		http.GameService{PhaseLength: *phaseLength, Serv: server},
+		http.GameEndpointGroup{PhaseLength: *phaseLength, Serv: server},
 	)
 
 	h.Register(
 		g.Group("/api/reports"),
-		http.ReportsService{},
+		http.ReportsEndpointGroup{},
 	)
 
 	h.Register(
 		g.Group("/api/honors"),
-		http.HonorsService{},
+		http.HonorsEndpointGroup{},
 	)
 
 	h.Register(
 		g.Group("/api/inventory"),
-		http.ItemsService{},
+		http.ItemsEndpointGroup{},
 	)
 
 	h.Register(
 		g.Group("/api/friends"),
-		http.FriendsService{},
+		http.FriendsEndpointGroup{},
 	)
 
 	e.Logger.Fatal(e.Start(":7070"))

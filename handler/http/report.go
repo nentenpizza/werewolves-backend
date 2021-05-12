@@ -4,20 +4,20 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
 	"github.com/nentenpizza/werewolves/jwt"
-	"github.com/nentenpizza/werewolves/storage"
+	"github.com/nentenpizza/werewolves/service"
 	"net/http"
 )
 
-type ReportsService struct {
+type ReportsEndpointGroup struct {
 	handler
 }
 
-func (s ReportsService) REGISTER(h handler, g *echo.Group) {
+func (s ReportsEndpointGroup) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
 	g.POST("/send", s.Report)
 }
 
-func (s ReportsService) Report(c echo.Context) error {
+func (s ReportsEndpointGroup) Report(c echo.Context) error {
 	var form struct {
 		ReportedID int64  `json:"reported_id" validate:"required"`
 		Reason     string `json:"reason" validate:"required,min=3"`
@@ -30,31 +30,12 @@ func (s ReportsService) Report(c echo.Context) error {
 		return err
 	}
 
-	user, err := s.db.Users.ByUsername(jwt.From(c.Get("user")).Username)
-
+	err := s.reportService.Report(jwt.From(c.Get("user")).ID, form.ReportedID, form.Reason)
 	if err != nil {
-		return err
-	}
-
-	exists, err := s.db.Users.ExistsByID(form.ReportedID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return c.JSON(http.StatusBadRequest, app.Err("user does not exist"))
-	}
-
-	if form.ReportedID == user.ID {
-		return c.JSON(http.StatusBadRequest, app.Err("you cannot report yourself"))
-	}
-
-	err = s.db.Reports.Create(storage.Report{
-		ReportedID: form.ReportedID,
-		Reason:     form.Reason,
-		SenderID:   user.ID,
-	})
-
-	if err != nil {
+		serviceErr, ok := err.(*service.Error)
+		if ok {
+			return c.JSON(serviceErr.Code, serviceErr.Error())
+		}
 		return err
 	}
 

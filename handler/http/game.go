@@ -17,13 +17,13 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Second * 60,
 }
 
-type GameService struct {
+type GameEndpointGroup struct {
 	handler
 	PhaseLength int
 	Serv        *wserver.Server
 }
 
-func (s GameService) REGISTER(h handler, g *echo.Group) {
+func (s GameEndpointGroup) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -35,11 +35,11 @@ func (s GameService) REGISTER(h handler, g *echo.Group) {
 	g.GET("/ws/:token", s.GameEndpoint)
 }
 
-func (s GameService) GetPhaseLength(c echo.Context) error {
+func (s GameEndpointGroup) GetPhaseLength(c echo.Context) error {
 	return c.JSON(200, echo.Map{"length": s.PhaseLength})
 }
 
-func (s *GameService) GameEndpoint(c echo.Context) error {
+func (s *GameEndpointGroup) GameEndpoint(c echo.Context) error {
 	var token *jwtgo.Token
 	var err error
 	tok := c.Param("token")
@@ -47,7 +47,7 @@ func (s *GameService) GameEndpoint(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, app.Err("invalid token"))
 	}
 	token, err = jwtgo.ParseWithClaims(tok, &j.Claims{}, func(token *jwtgo.Token) (interface{}, error) {
-		return s.s, nil
+		return s.secret, nil
 	})
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, "bad token")
