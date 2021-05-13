@@ -29,13 +29,18 @@ func (h *handler) endGame(e *werewolves.RoomResult, room *werewolves.Room) error
 		xp := int(math.Max(500, float64(rand.Intn(1000))))
 		user.XP += int64(xp)
 		user.Wins++
-		p.Update <- &Event{Type: EventTypeEndGame, Data: EventEndGame{WonGroup: wonGroup, LoseGroup: loseGroup, XP: xp}}
+
 		err = h.db.Users.Update(user)
 		if err != nil {
 			return err
 		}
+
 		client := h.c.ByID(p.ID)
-		client.LeaveRoom()
+		if client != nil {
+			p.Update <- &Event{Type: EventTypeEndGame, Data: EventEndGame{WonGroup: wonGroup, LoseGroup: loseGroup, XP: xp}}
+			h.c.Delete(client.ID)
+		}
+
 	}
 
 	for _, p := range loseGroup {
@@ -44,14 +49,18 @@ func (h *handler) endGame(e *werewolves.RoomResult, room *werewolves.Room) error
 			continue
 		}
 		user.Losses++
-		p.Update <- &Event{Type: EventTypeEndGame, Data: EventEndGame{WonGroup: wonGroup, LoseGroup: loseGroup, XP: 0}}
 		err = h.db.Users.Update(user)
 		if err != nil {
 			return err
 		}
+
 		client := h.c.ByID(p.ID)
-		client.LeaveRoom()
+		if client != nil {
+			p.Update <- &Event{Type: EventTypeEndGame, Data: EventEndGame{WonGroup: wonGroup, LoseGroup: loseGroup, XP: 0}}
+			h.c.Delete(client.ID)
+		}
 	}
-	h.deleteRoom(room.ID)
+	h.r.Delete(room.ID)
+	h.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: room.ID}})
 	return nil
 }

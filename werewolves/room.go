@@ -118,7 +118,7 @@ func (r *Room) Started() bool {
 	return r.started
 }
 
-// Run define roles and runs a main cycle of room (as a goroutine)
+// Start defines roles and runs main cycle of room (as a goroutine)
 func (r *Room) Start() error {
 	if !r.started {
 		if len(r.Players) < MinPlayers {
@@ -331,10 +331,11 @@ func (r *Room) defineRoles() error {
 			r.doJoinGroup("peaceful", v)
 			v.Groups = append(v.Groups, "peaceful")
 		}
-		v.Update <- Event{EventType: EventTypeShowRole, Data: struct {
-			Name      string    `json:"name"`
-			Character Character `json:"character"`
-		}{Name: v.Role, Character: v.Character}}
+		v.Update <- Event{
+			EventType: EventTypeShowRole, Data: struct {
+				Name      string    `json:"name"`
+				Character Character `json:"character"`
+			}{Name: v.Role, Character: v.Character}}
 		i++
 	}
 	return nil
