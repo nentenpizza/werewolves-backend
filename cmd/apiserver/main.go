@@ -64,7 +64,10 @@ func main() {
 	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom)
 	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom)
 	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame)
+
 	server.Handle(wserver.OnConnect, wsHandler.OnConnect)
+	server.Handle(wserver.OnDisconnect, wsHandler.OnDisconnect)
+
 	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage)
 	server.Handle(websocket.EventTypeVote, wsHandler.OnVote)
 	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)

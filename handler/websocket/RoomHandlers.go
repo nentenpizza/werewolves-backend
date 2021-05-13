@@ -140,6 +140,7 @@ func (h *handler) OnLeaveRoom(ctx *wserver.Context) error {
 		}
 	}
 	client.WriteJSON(ctx.Update)
+	h.c.Delete(client.Token.Username)
 	return nil
 }
 

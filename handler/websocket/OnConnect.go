@@ -12,6 +12,8 @@ func (h *handler) OnConnect(ctx *wserver.Context) error {
 		}
 		if client.Room() == nil {
 			client.WriteJSON(&Event{Type: EventTypeNotInGame})
+		} else {
+			Logger.WithField("client_room", client.room).Info("reconnected to room")
 		}
 	}
 	return ctx.Conn.WriteJSON(Event{Type: EventTypeAllRooms, Data: EventAllRooms{h.r}})

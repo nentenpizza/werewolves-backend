@@ -97,9 +97,7 @@ func (c *Client) WriteJSON(i interface{}) error {
 	c.Lock()
 	defer c.Unlock()
 	var err error
-	if c.conn != nil {
-		err = c.conn.WriteJSON(i)
-	}
+	err = c.conn.WriteJSON(i)
 	if err != nil {
 		c.Unreached = append(c.Unreached, i)
 		Logger.WithFields(log.Fields{
