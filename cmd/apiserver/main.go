@@ -72,8 +72,9 @@ func main() {
 	server.Handle(websocket.EventTypeVote, wsHandler.OnVote)
 	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)
 	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote)
+	server.Handle(websocket.EventTypeAllRooms, wsHandler.OnListRooms)
 
-	serv := service.NewService(db)
+	serv := service.New(db)
 	h := http.NewHandler(
 		http.Handler{
 			DB:            db,

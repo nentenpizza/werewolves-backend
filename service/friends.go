@@ -8,6 +8,8 @@ import (
 type FriendService interface {
 	Request(fromID int64, toID int64) (int, error)
 	UserFriends(userID int64) ([]storage.User, error)
+	AcceptBySenderID(userID int64, senderID int64) error
+	UnacceptedUsers(userID int64) ([]storage.User, error)
 }
 
 type Friends struct {
@@ -49,9 +51,33 @@ func (s Friends) UserFriends(userID int64) ([]storage.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	users, err := s.db.Friends.UsersByID(user.Relations, user.ID)
+	users, err := s.db.Friends.UsersByIDs(user.Relations, user.ID)
 	if err != nil {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (s Friends) AcceptBySenderID(userID int64, senderID int64) error {
+	me, err := s.db.Users.ByID(userID)
+	if err != nil {
+		return err
+	}
+	has, err := s.db.Friends.IsFriend(me.Relations, senderID)
+	if err != nil {
+		return err
+	}
+	if has {
+		return serviceError(http.StatusConflict, "user already your friend")
+	}
+	err = s.db.Friends.AcceptBySenderID(me.Relations, senderID, userID)
+	return err
+}
+
+func (s Friends) UnacceptedUsers(userID int64) ([]storage.User, error) {
+	me, err := s.db.Users.ByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.db.Friends.UnacceptedUsersByIDs(me.Relations, userID)
 }

@@ -14,9 +14,13 @@ type FriendsEndpointGroup struct {
 
 func (s FriendsEndpointGroup) REGISTER(h handler, g *echo.Group) {
 	s.handler = h
+
 	g.POST("/request", s.Request)
 	g.POST("/accept", s.Accept)
+	g.POST("/accept_userid", s.AcceptByUserID)
+
 	g.GET("/list", s.Friends)
+	g.GET("/list_unaccepted", s.ListUnaccepted)
 }
 
 func (s FriendsEndpointGroup) Request(c echo.Context) error {
@@ -40,7 +44,7 @@ func (s FriendsEndpointGroup) Request(c echo.Context) error {
 
 func (s FriendsEndpointGroup) Accept(c echo.Context) error {
 	var form struct {
-		ID int `json:"id"`
+		ID int `json:"request_id"`
 	}
 	if err := c.Bind(&form); err != nil {
 		return err
@@ -62,5 +66,35 @@ func (s FriendsEndpointGroup) Friends(c echo.Context) error {
 		}
 		return err
 	}
-	return c.JSON(http.StatusOK, users)
+	return c.JSON(http.StatusOK, echo.Map{"friends": users})
+}
+
+func (s FriendsEndpointGroup) ListUnaccepted(c echo.Context) error {
+	users, err := s.friendService.UnacceptedUsers(jwt.From(c.Get("user")).ID)
+	if err != nil {
+		serviceErr, ok := err.(*service.Error)
+		if ok {
+			return c.JSON(serviceErr.Code, serviceErr.Error())
+		}
+		return err
+	}
+	return c.JSON(http.StatusOK, echo.Map{"unaccepted": users})
+}
+
+func (s FriendsEndpointGroup) AcceptByUserID(c echo.Context) error {
+	var form struct {
+		ID int64 `json:"user_id"`
+	}
+	if err := c.Bind(&form); err != nil {
+		return err
+	}
+	err := s.friendService.AcceptBySenderID(form.ID, jwt.From(c.Get("user")).ID)
+	if err != nil {
+		serviceErr, ok := err.(*service.Error)
+		if ok {
+			return c.JSON(serviceErr.Code, serviceErr.Error())
+		}
+		return err
+	}
+	return c.JSON(http.StatusOK, app.Ok())
 }
