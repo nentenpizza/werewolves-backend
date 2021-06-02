@@ -46,14 +46,17 @@ func main() {
 	defer logFile.Close()
 	websocket.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
 
+	serv := service.New(db)
+
 	wsHandler := websocket.NewHandler(
 		websocket.Handler{
 			DB: db,
 			Clients: websocket.NewClients(
 				make(map[string]*websocket.Client),
 			),
-			Rooms:  websocket.NewRooms(make(map[string]*werewolves.Room)),
-			Secret: uuid,
+			Rooms:          websocket.NewRooms(make(map[string]*werewolves.Room)),
+			Secret:         uuid,
+			FriendsService: &service.Friends{Service: serv},
 		},
 	)
 
@@ -74,7 +77,6 @@ func main() {
 	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote)
 	server.Handle(websocket.EventTypeAllRooms, wsHandler.OnListRooms)
 
-	serv := service.New(db)
 	h := http.NewHandler(
 		http.Handler{
 			DB:            db,

@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"github.com/nentenpizza/werewolves/service"
 	"github.com/nentenpizza/werewolves/storage"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -55,24 +56,27 @@ func NewClients(c map[string]*Client) *Clients {
 }
 
 type Handler struct {
-	DB      *storage.DB
-	Rooms   *Rooms
-	Clients *Clients
-	Secret  []byte
+	DB             *storage.DB
+	Rooms          *Rooms
+	Clients        *Clients
+	Secret         []byte
+	FriendsService service.FriendService
 }
 
 type handler struct {
-	db *storage.DB
-	r  *Rooms
-	c  *Clients
-	s  []byte
+	db      *storage.DB
+	r       *Rooms
+	c       *Clients
+	s       []byte
+	friends service.FriendService
 }
 
 func NewHandler(h Handler) *handler {
 	return &handler{
-		db: h.DB,
-		r:  h.Rooms,
-		c:  h.Clients,
-		s:  h.Secret,
+		db:      h.DB,
+		r:       h.Rooms,
+		c:       h.Clients,
+		s:       h.Secret,
+		friends: h.FriendsService,
 	}
 }

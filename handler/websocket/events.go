@@ -27,6 +27,10 @@ const (
 	EventTypeSendEmote   = "send_emote"
 	EventTypeFloodWait   = "flood_wait"
 	EventTypeEmojiWait   = "emoji_wait"
+
+	EventTypeFriendsOnlineInfo = "friends_online_info"
+
+	EventTypeFriendLoggedIn = "friend_logged_in"
 )
 
 // Event types for skills
@@ -69,6 +73,15 @@ type (
 
 	EventRoomDeleted struct {
 		RoomID string `json:"room_id" mapstructure:"room_id"`
+	}
+)
+
+type (
+	EventFriendsOnlineInfo struct {
+		OnlineUsers []string `json:"online_users"`
+	}
+	EventFriendLoggedIn struct {
+		Username string `json:"username"`
 	}
 )
 
