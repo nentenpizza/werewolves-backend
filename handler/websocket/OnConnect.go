@@ -19,7 +19,7 @@ func (h *handler) OnConnect(ctx *wserver.Context) error {
 		go func() {
 			friends, err := h.friends.UserFriends(client.Token.ID)
 			if err != nil {
-				log.Println(err)
+				return
 			}
 
 			online := make([]string, 0)
@@ -29,7 +29,7 @@ func (h *handler) OnConnect(ctx *wserver.Context) error {
 				if c != nil {
 					online = append(online, f.Username)
 					c.conn.WriteJSON(Event{Type: EventTypeFriendLoggedIn,
-						Data: EventFriendLoggedIn{client.Token.Username},
+						Data: EventUsername{client.Token.Username},
 					})
 				}
 			}

@@ -30,7 +30,10 @@ const (
 
 	EventTypeFriendsOnlineInfo = "friends_online_info"
 
-	EventTypeFriendLoggedIn = "friend_logged_in"
+	EventTypeFriendLoggedIn  = "friend_logged_in"
+	EventTypeFriendLoggedOut = "friend_logged_out"
+
+	EventTypeFriendshipRequest = "friend.request"
 )
 
 // Event types for skills
@@ -76,12 +79,13 @@ type (
 	}
 )
 
+// Relationship system events
 type (
+	EventUsername struct {
+		Username string `json:"username"`
+	}
 	EventFriendsOnlineInfo struct {
 		OnlineUsers []string `json:"online_users"`
-	}
-	EventFriendLoggedIn struct {
-		Username string `json:"username"`
 	}
 )
 
