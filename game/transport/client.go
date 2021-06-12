@@ -1,8 +1,8 @@
-package websocket
+package transport
 
 import (
+	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/jwt"
-	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -12,8 +12,8 @@ import (
 type Client struct {
 	sync.Mutex
 	conn *wserver.Conn
-	*werewolves.Player
-	room      *werewolves.Room
+	*werewolves2.Player
+	room      *werewolves2.Room
 	AFK       bool
 	Token     jwt.Claims
 	Unreached []interface{}
@@ -52,23 +52,23 @@ func (c *Client) UpdateConn(conn *wserver.Conn) {
 	c.conn = conn
 }
 
-func (c *Client) SetRoom(r *werewolves.Room) {
+func (c *Client) SetRoom(r *werewolves2.Room) {
 	c.Lock()
 	defer c.Unlock()
 	c.room = r
 }
-func (c *Client) SetChar(plr *werewolves.Player) {
+func (c *Client) SetChar(plr *werewolves2.Player) {
 	c.Lock()
 	defer c.Unlock()
 	c.Player = plr
 }
 
-func (c *Client) Room() *werewolves.Room {
+func (c *Client) Room() *werewolves2.Room {
 	c.Lock()
 	defer c.Unlock()
 	return c.room
 }
-func (c *Client) Char() *werewolves.Player {
+func (c *Client) Char() *werewolves2.Player {
 	c.Lock()
 	defer c.Unlock()
 	return c.Player

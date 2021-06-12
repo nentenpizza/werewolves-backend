@@ -1,7 +1,7 @@
-package websocket
+package transport
 
 import (
-	"github.com/nentenpizza/werewolves/werewolves"
+	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 	"time"
 )
@@ -9,7 +9,7 @@ import (
 var FloodWaitDuration = 2 * time.Second
 var EmojiWaitDuration = 2 * time.Second
 
-func (h *handler) OnMessage(ctx *wserver.Context) error {
+func (g *game) OnMessage(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 
 	event := &MessageEvent{}
@@ -34,7 +34,7 @@ func (h *handler) OnMessage(ctx *wserver.Context) error {
 			}
 			if client.Player.Character != nil {
 				if client.Player.Character.HP() > 0 {
-					if client.Room().State != werewolves.Night {
+					if client.Room().State != werewolves2.Night {
 						client.Room().BroadcastEvent(ctx.Update)
 					} else {
 						if client.Room().InGroup("wolves", client.Player.ID) {
@@ -54,7 +54,7 @@ func (h *handler) OnMessage(ctx *wserver.Context) error {
 	return nil
 }
 
-func (h *handler) OnEmote(ctx *wserver.Context) error {
+func (g *game) OnEmote(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client != nil {
 		if time.Now().Sub(client.EmojiWait) < EmojiWaitDuration {

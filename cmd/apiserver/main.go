@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/nentenpizza/werewolves/game/transport"
+	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/handler/http"
 	"github.com/nentenpizza/werewolves/handler/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/service"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
-	"github.com/nentenpizza/werewolves/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 	"io"
 	"log"
@@ -28,7 +29,7 @@ var phaseLength = flag.Int("phase", 30, "phase length in game")
 func main() {
 	flag.Parse()
 
-	werewolves.PhaseLength = time.Duration(*phaseLength) * time.Second
+	werewolves2.PhaseLength = time.Duration(*phaseLength) * time.Second
 
 	db, err := storage.Open(*PGURL)
 	if err != nil {
@@ -44,38 +45,27 @@ func main() {
 		log.Fatal(err)
 	}
 	defer logFile.Close()
-	websocket.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
+	transport.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
 
 	serv := service.New(db)
 
-	wsHandler := websocket.NewHandler(
-		websocket.Handler{
+	wsHandler := transport.NewGame(
+		transport.Game{
 			DB: db,
-			Clients: websocket.NewClients(
-				make(map[string]*websocket.Client),
+			Clients: transport.NewClients(
+				make(map[string]*transport.Client),
 			),
-			Rooms:          websocket.NewRooms(make(map[string]*werewolves.Room)),
+			Rooms:          transport.NewRooms(make(map[string]*werewolves2.Room)),
 			Secret:         uuid,
 			FriendsService: &service.Friends{Service: serv},
 		},
 	)
 
-	server := wserver.NewServer(wserver.Settings{UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid})
-
-	server.Use(wsHandler.WebsocketJWT, wsHandler.Logger)
-	server.Handle(websocket.EventTypeCreateRoom, wsHandler.OnCreateRoom)
-	server.Handle(websocket.EventTypeJoinRoom, wsHandler.OnJoinRoom)
-	server.Handle(websocket.EventTypeLeaveRoom, wsHandler.OnLeaveRoom)
-	server.Handle(websocket.EventTypeStartGame, wsHandler.OnStartGame)
-
-	server.Handle(wserver.OnConnect, wsHandler.OnConnect)
-	server.Handle(wserver.OnDisconnect, wsHandler.OnDisconnect)
-
-	server.Handle(websocket.EventTypeSendMessage, wsHandler.OnMessage)
-	server.Handle(websocket.EventTypeVote, wsHandler.OnVote)
-	server.Handle(websocket.EventTypeUseSkill, wsHandler.OnSkill)
-	server.Handle(websocket.EventTypeSendEmote, wsHandler.OnEmote)
-	server.Handle(websocket.EventTypeAllRooms, wsHandler.OnListRooms)
+	server := websocket.Initialize(wserver.Settings{
+		UseJWT: true, OnError: wsHandler.OnError, Claims: &jwt.Claims{}, Secret: uuid,
+	},
+		wsHandler,
+	)
 
 	h := http.NewHandler(
 		http.Handler{

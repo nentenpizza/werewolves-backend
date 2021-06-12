@@ -1,8 +1,8 @@
-package websocket
+package transport
 
 import (
 	"encoding/json"
-	"github.com/nentenpizza/werewolves/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 	"sync"
 )
@@ -42,7 +42,7 @@ func NewRooms(m map[string]*werewolves.Room) *Rooms {
 	return &Rooms{rooms: m}
 }
 
-func (h *handler) OnListRooms(c *wserver.Context) error {
-	c.Update.Data = EventAllRooms{Rooms: h.r}
+func (g *game) OnListRooms(c *wserver.Context) error {
+	c.Update.Data = EventAllRooms{Rooms: g.r}
 	return c.Conn.WriteJSON(c.Update)
 }

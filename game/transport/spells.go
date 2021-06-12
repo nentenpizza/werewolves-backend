@@ -1,21 +1,21 @@
-package websocket
+package transport
 
 import (
-	"github.com/nentenpizza/werewolves/werewolves"
+	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
-func (h *handler) OnSkill(ctx *wserver.Context) error {
+func (g *game) OnSkill(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
 	}
 	if room := client.Room(); room != nil {
 
-		var action werewolves.Action
+		var action werewolves2.Action
 
 		switch char := client.Player.Character.(type) {
-		case *werewolves.Constable:
+		case *werewolves2.Constable:
 			e := TargetedEvent{}
 			if err := ctx.Bind(&e); err != nil {
 				return err
@@ -26,7 +26,7 @@ func (h *handler) OnSkill(ctx *wserver.Context) error {
 			}
 			action = char.Shoot(p)
 
-		case *werewolves.Doctor:
+		case *werewolves2.Doctor:
 			e := TargetedEvent{}
 			if err := ctx.Bind(&e); err != nil {
 				return err
@@ -37,8 +37,8 @@ func (h *handler) OnSkill(ctx *wserver.Context) error {
 			}
 			action = char.Heal(p)
 
-		case *werewolves.AlphaWerewolf:
-			if room.State != werewolves.Night {
+		case *werewolves2.AlphaWerewolf:
+			if room.State != werewolves2.Night {
 				return NotAllowedErr
 			}
 			e := TargetedEvent{}
@@ -52,8 +52,8 @@ func (h *handler) OnSkill(ctx *wserver.Context) error {
 			err := client.WriteJSON(Event{Type: EventTypeRevealRole, Data: EventRevealRole{p.Role, p.ID}})
 			return err
 
-		case *werewolves.Psychic:
-			if room.State != werewolves.Night {
+		case *werewolves2.Psychic:
+			if room.State != werewolves2.Night {
 				return NotAllowedErr
 			}
 			e := TargetedEvent{}

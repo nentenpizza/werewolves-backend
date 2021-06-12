@@ -1,11 +1,11 @@
-package websocket
+package transport
 
 import (
 	"github.com/nentenpizza/werewolves/wserver"
 	"log"
 )
 
-func (h *handler) OnConnect(ctx *wserver.Context) error {
+func (g *game) OnConnect(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client != nil {
 		if len(client.Unreached) > 1 {
@@ -17,7 +17,7 @@ func (h *handler) OnConnect(ctx *wserver.Context) error {
 			Logger.WithField("client_room", client.room).Info("reconnected to room")
 		}
 		go func() {
-			friends, err := h.friends.UserFriends(client.Token.ID)
+			friends, err := g.friends.UserFriends(client.Token.ID)
 			if err != nil {
 				return
 			}
@@ -25,7 +25,7 @@ func (h *handler) OnConnect(ctx *wserver.Context) error {
 			online := make([]string, 0)
 
 			for _, f := range friends {
-				c := h.c.Read(f.Username)
+				c := g.c.Read(f.Username)
 				if c != nil {
 					online = append(online, f.Username)
 					c.conn.WriteJSON(Event{Type: EventTypeFriendLoggedIn,
@@ -43,5 +43,5 @@ func (h *handler) OnConnect(ctx *wserver.Context) error {
 		}()
 	}
 
-	return ctx.Conn.WriteJSON(Event{Type: EventTypeAllRooms, Data: EventAllRooms{h.r}})
+	return ctx.Conn.WriteJSON(Event{Type: EventTypeAllRooms, Data: EventAllRooms{g.r}})
 }

@@ -1,4 +1,4 @@
-package websocket
+package transport
 
 var (
 	RoomNotFoundErr = &ServerError{Type: "RoomNotFoundErr"}
