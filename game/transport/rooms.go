@@ -1,8 +1,9 @@
-package websocket
+package transport
 
 import (
 	"encoding/json"
-	"github.com/nentenpizza/werewolves/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
+	"github.com/nentenpizza/werewolves/wserver"
 	"sync"
 )
 
@@ -39,4 +40,9 @@ func (m *Rooms) MarshalJSON() ([]byte, error) {
 
 func NewRooms(m map[string]*werewolves.Room) *Rooms {
 	return &Rooms{rooms: m}
+}
+
+func (g *game) OnListRooms(c *wserver.Context) error {
+	c.Update.Data = EventAllRooms{Rooms: g.r}
+	return c.Conn.WriteJSON(c.Update)
 }

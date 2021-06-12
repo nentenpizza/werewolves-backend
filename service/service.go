@@ -6,7 +6,7 @@ type Service struct {
 	db *storage.DB
 }
 
-func NewService(db *storage.DB) Service {
+func New(db *storage.DB) Service {
 	return Service{
 		db: db,
 	}

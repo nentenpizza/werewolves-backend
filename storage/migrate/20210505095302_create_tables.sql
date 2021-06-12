@@ -14,7 +14,7 @@ create table users
     login         varchar(25)             not null,
     username      varchar(13) primary key not null,
     password_hash varchar(60)             not null,
-    relations     integer[]               not null default '{0}',
+    relations     integer[]               not null default '{}',
     avatar        varchar(68)             not null default 'guest',
     banned_until  timestamp               not null default now() - interval '1' day,
     wins          INTEGER                 not null default 0,

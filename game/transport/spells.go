@@ -1,11 +1,11 @@
-package websocket
+package transport
 
 import (
-	"github.com/nentenpizza/werewolves/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
-func (h *handler) OnSkill(ctx *wserver.Context) error {
+func (g *game) OnSkill(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr

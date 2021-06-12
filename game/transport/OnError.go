@@ -1,11 +1,11 @@
-package websocket
+package transport
 
 import (
 	"github.com/nentenpizza/werewolves/wserver"
 	log "github.com/sirupsen/logrus"
 )
 
-func (h *handler) OnError(err error, ctx *wserver.Context) {
+func (g *game) OnError(err error, ctx *wserver.Context) {
 	client, ok := ctx.Get("client").(*Client)
 	if ok {
 		if err != nil {

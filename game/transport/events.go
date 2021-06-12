@@ -1,7 +1,7 @@
-package websocket
+package transport
 
 import (
-	"github.com/nentenpizza/werewolves/werewolves"
+	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
 )
 
 // Event Types for typical things
@@ -10,7 +10,7 @@ const (
 	EventTypeJoinRoom   = "join_room"
 	EventTypeLeaveRoom  = "leave_room"
 	EventTypeStartGame  = "start_room"
-	EventTypeVote       = werewolves.VoteAction
+	EventTypeVote       = werewolves2.VoteAction
 	EventTypeAllRooms   = "all_rooms"
 
 	EventTypeRoomCreated = "new_room"
@@ -27,12 +27,19 @@ const (
 	EventTypeSendEmote   = "send_emote"
 	EventTypeFloodWait   = "flood_wait"
 	EventTypeEmojiWait   = "emoji_wait"
+
+	EventTypeFriendsOnlineInfo = "friends_online_info"
+
+	EventTypeFriendLoggedIn  = "friend_logged_in"
+	EventTypeFriendLoggedOut = "friend_logged_out"
+
+	EventTypeFriendshipRequest = "friend.request"
 )
 
 // Event types for skills
 const (
-	EventTypeConstableShoot = werewolves.ConstableShootAction
-	EventTypeDoctorHeal     = werewolves.DoctorHealAction
+	EventTypeConstableShoot = werewolves2.ConstableShootAction
+	EventTypeDoctorHeal     = werewolves2.DoctorHealAction
 )
 
 type Event struct {
@@ -50,8 +57,8 @@ type EventErr struct {
 type (
 	// EventCreateRoom represents event for creating room
 	EventCreateRoom struct {
-		RoomName string              `json:"room_name" mapstructure:"room_name"`
-		Settings werewolves.Settings `json:"settings" mapstructure:"settings"`
+		RoomName string               `json:"room_name" mapstructure:"room_name"`
+		Settings werewolves2.Settings `json:"settings" mapstructure:"settings"`
 	}
 
 	EventRoomPlayer struct {
@@ -64,11 +71,21 @@ type (
 	}
 
 	EventNewRoomCreated struct {
-		Room *werewolves.Room `json:"room" mapstructure:"room"`
+		Room *werewolves2.Room `json:"room" mapstructure:"room"`
 	}
 
 	EventRoomDeleted struct {
 		RoomID string `json:"room_id" mapstructure:"room_id"`
+	}
+)
+
+// Relationship system events
+type (
+	EventUsername struct {
+		Username string `json:"username"`
+	}
+	EventFriendsOnlineInfo struct {
+		OnlineUsers []string `json:"online_users"`
 	}
 )
 
@@ -78,8 +95,8 @@ type EventRevealRole struct {
 }
 
 type EventEndGame struct {
-	WonGroup  map[string]*werewolves.Player `json:"won" mapstructure:"won"`
-	LoseGroup map[string]*werewolves.Player `json:"lose" mapstructure:"lose"`
+	WonGroup  map[string]*werewolves2.Player `json:"won" mapstructure:"won"`
+	LoseGroup map[string]*werewolves2.Player `json:"lose" mapstructure:"lose"`
 
 	// XP is the amount of experience the player received for this game
 	XP int `json:"XP" mapstructure:"XP"`

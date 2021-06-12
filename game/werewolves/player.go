@@ -23,7 +23,8 @@ type Player struct {
 
 	// Here we put an in-game updates
 	Update chan interface{} `json:"-"`
-	Room   *Room            `json:"room"`
+
+	Room *Room `json:"room"`
 
 	Groups []string `json:"groups"`
 

@@ -222,6 +222,7 @@ func (r *Room) forceNextState() {
 }
 
 // Perform validates Action and performs it
+// then sends Action.Event to all players or players in specific groups
 func (r *Room) Perform(action Action, groups ...string) error {
 	r.Lock()
 	defer r.Unlock()

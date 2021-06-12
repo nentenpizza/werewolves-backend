@@ -1,12 +1,12 @@
-package websocket
+package transport
 
 import (
 	"github.com/google/uuid"
-	"github.com/nentenpizza/werewolves/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
-func (h *handler) OnJoinRoom(ctx *wserver.Context) error {
+func (g *game) OnJoinRoom(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -22,7 +22,7 @@ func (h *handler) OnJoinRoom(ctx *wserver.Context) error {
 	if client.Room() != nil {
 		return AlreadyInRoomErr
 	}
-	room := h.r.Read(event.RoomID)
+	room := g.r.Read(event.RoomID)
 	if room == nil {
 		return RoomNotExistsErr
 	}
@@ -47,7 +47,7 @@ func (h *handler) OnJoinRoom(ctx *wserver.Context) error {
 	return nil
 }
 
-func (h *handler) OnStartGame(ctx *wserver.Context) error {
+func (g *game) OnStartGame(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -63,18 +63,18 @@ func (h *handler) OnStartGame(ctx *wserver.Context) error {
 	if err != nil {
 		return RoomStartErr
 	}
-	h.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: &EventRoomDeleted{RoomID: room.ID}})
+	g.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: &EventRoomDeleted{RoomID: room.ID}})
 	go func() {
 		select {
 		case e := <-room.NotifyDone:
-			h.endGame(e, room)
+			g.endGame(e, room)
 			return
 		}
 	}()
 	return nil
 }
 
-func (h *handler) OnCreateRoom(ctx *wserver.Context) error {
+func (g *game) OnCreateRoom(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -93,7 +93,7 @@ func (h *handler) OnCreateRoom(ctx *wserver.Context) error {
 
 	roomID := uuid.New().String()
 	room := werewolves.NewRoom(roomID, event.RoomName, werewolves.Players{}, event.Settings, client.Token.Username)
-	h.r.Write(room.ID, room)
+	g.r.Write(room.ID, room)
 
 	err = room.AddPlayer(player)
 	if err != nil {
@@ -111,16 +111,16 @@ func (h *handler) OnCreateRoom(ctx *wserver.Context) error {
 	}
 
 	go func() {
-		h.c.Lock()
-		for _, c := range h.c.clients {
+		g.c.Lock()
+		for _, c := range g.c.clients {
 			c.WriteJSON(&Event{Type: EventTypeRoomCreated, Data: EventNewRoomCreated{Room: room}})
 		}
-		h.c.Unlock()
+		g.c.Unlock()
 	}()
 	return nil
 }
 
-func (h *handler) OnLeaveRoom(ctx *wserver.Context) error {
+func (g *game) OnLeaveRoom(ctx *wserver.Context) error {
 	client := ctx.Get("client").(*Client)
 	if client == nil {
 		return PlayerNotFoundErr
@@ -135,25 +135,25 @@ func (h *handler) OnLeaveRoom(ctx *wserver.Context) error {
 		client.SetRoom(nil)
 		client.quit <- true
 		if len(room.Players) <= 0 {
-			h.deleteRoom(room.ID)
-			h.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: room.ID}})
+			g.deleteRoom(room.ID)
+			g.broadcastToClients(&Event{Type: EventTypeRoomDeleted, Data: EventRoomDeleted{RoomID: room.ID}})
 		}
 	}
 	client.WriteJSON(ctx.Update)
-	h.c.Delete(client.Token.Username)
+	g.c.Delete(client.Token.Username)
 	return nil
 }
 
-func (h *handler) deleteRoom(roomID string) {
-	h.r.Delete(roomID)
+func (g *game) deleteRoom(roomID string) {
+	g.r.Delete(roomID)
 }
 
-func (h handler) broadcastToClients(e interface{}) {
+func (g game) broadcastToClients(e interface{}) {
 	go func() {
-		h.c.Lock()
-		for _, c := range h.c.clients {
+		g.c.Lock()
+		for _, c := range g.c.clients {
 			c.WriteJSON(e)
 		}
-		h.c.Unlock()
+		g.c.Unlock()
 	}()
 }
