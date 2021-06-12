@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/game/transport"
-	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/handler/http"
 	"github.com/nentenpizza/werewolves/handler/websocket"
 	"github.com/nentenpizza/werewolves/jwt"
@@ -29,7 +29,7 @@ var phaseLength = flag.Int("phase", 30, "phase length in game")
 func main() {
 	flag.Parse()
 
-	werewolves2.PhaseLength = time.Duration(*phaseLength) * time.Second
+	werewolves.PhaseLength = time.Duration(*phaseLength) * time.Second
 
 	db, err := storage.Open(*PGURL)
 	if err != nil {
@@ -55,7 +55,7 @@ func main() {
 			Clients: transport.NewClients(
 				make(map[string]*transport.Client),
 			),
-			Rooms:          transport.NewRooms(make(map[string]*werewolves2.Room)),
+			Rooms:          transport.NewRooms(make(map[string]*werewolves.Room)),
 			Secret:         uuid,
 			FriendsService: &service.Friends{Service: serv},
 		},

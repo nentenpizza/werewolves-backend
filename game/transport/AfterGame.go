@@ -2,13 +2,13 @@ package transport
 
 import (
 	"errors"
-	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"math"
 	"math/rand"
 )
 
-func (g *game) endGame(e *werewolves2.RoomResult, room *werewolves2.Room) error {
-	var loseGroup map[string]*werewolves2.Player
+func (g *game) endGame(e *werewolves.RoomResult, room *werewolves.Room) error {
+	var loseGroup map[string]*werewolves.Player
 	wonGroup, ok := room.Groups[e.WonGroup]
 	if !ok {
 		return errors.New("websocket: wonGroup not found")

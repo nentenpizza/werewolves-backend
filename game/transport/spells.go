@@ -1,7 +1,7 @@
 package transport
 
 import (
-	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
@@ -12,10 +12,10 @@ func (g *game) OnSkill(ctx *wserver.Context) error {
 	}
 	if room := client.Room(); room != nil {
 
-		var action werewolves2.Action
+		var action werewolves.Action
 
 		switch char := client.Player.Character.(type) {
-		case *werewolves2.Constable:
+		case *werewolves.Constable:
 			e := TargetedEvent{}
 			if err := ctx.Bind(&e); err != nil {
 				return err
@@ -26,7 +26,7 @@ func (g *game) OnSkill(ctx *wserver.Context) error {
 			}
 			action = char.Shoot(p)
 
-		case *werewolves2.Doctor:
+		case *werewolves.Doctor:
 			e := TargetedEvent{}
 			if err := ctx.Bind(&e); err != nil {
 				return err
@@ -37,8 +37,8 @@ func (g *game) OnSkill(ctx *wserver.Context) error {
 			}
 			action = char.Heal(p)
 
-		case *werewolves2.AlphaWerewolf:
-			if room.State != werewolves2.Night {
+		case *werewolves.AlphaWerewolf:
+			if room.State != werewolves.Night {
 				return NotAllowedErr
 			}
 			e := TargetedEvent{}
@@ -52,8 +52,8 @@ func (g *game) OnSkill(ctx *wserver.Context) error {
 			err := client.WriteJSON(Event{Type: EventTypeRevealRole, Data: EventRevealRole{p.Role, p.ID}})
 			return err
 
-		case *werewolves2.Psychic:
-			if room.State != werewolves2.Night {
+		case *werewolves.Psychic:
+			if room.State != werewolves.Night {
 				return NotAllowedErr
 			}
 			e := TargetedEvent{}

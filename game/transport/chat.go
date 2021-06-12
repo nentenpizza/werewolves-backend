@@ -1,7 +1,7 @@
 package transport
 
 import (
-	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
+	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 	"time"
 )
@@ -34,7 +34,7 @@ func (g *game) OnMessage(ctx *wserver.Context) error {
 			}
 			if client.Player.Character != nil {
 				if client.Player.Character.HP() > 0 {
-					if client.Room().State != werewolves2.Night {
+					if client.Room().State != werewolves.Night {
 						client.Room().BroadcastEvent(ctx.Update)
 					} else {
 						if client.Room().InGroup("wolves", client.Player.ID) {
