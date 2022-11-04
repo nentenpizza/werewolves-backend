@@ -1,7 +1,5 @@
 -- +goose Up
 
-create database werewolves;
-
 -- users
 
 create table users

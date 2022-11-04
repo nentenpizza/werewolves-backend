@@ -13,7 +13,7 @@ import (
 
 // States
 // Werewolves does not have discuss time
-// instead they voting just in night
+// instead they voting only on night
 const (
 	DayVoting = "voting"
 	Night     = "night"
@@ -122,7 +122,7 @@ func (r *Room) Started() bool {
 func (r *Room) Start() error {
 	if !r.started {
 		if len(r.Players) < MinPlayers {
-			return errors.New("not enough players to start")
+			return NotEnoughPlayers
 		}
 		if len(r.Players) > MaxPlayers {
 			return errors.New("too much players in room")
