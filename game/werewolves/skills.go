@@ -36,7 +36,7 @@ func (char *Doctor) Heal(other *Player) Action {
 	return NewAction(DoctorHealAction,
 		func(r *Room) error {
 			if char.HP() <= 0 {
-				return errors.New("werewolves: player already dead")
+				return errors.New("werewolves: player dead")
 			}
 			other.Character.SetHP(other.Character.HP() + 1)
 			log.Println("Heal player ", other.ID)
@@ -56,7 +56,7 @@ func (char *Psychic) Resurrect(other *Player) Action {
 		PsychicResurrectAction,
 		func(r *Room) error {
 			if char.HP() <= 0 {
-				return errors.New("werewolves: player are dead")
+				return errors.New("werewolves: player dead")
 			}
 			err := r.Resurrect(other.ID)
 			return err
@@ -66,5 +66,4 @@ func (char *Psychic) Resurrect(other *Player) Action {
 			TargetedEvent{other.ID},
 		),
 	)
-
 }

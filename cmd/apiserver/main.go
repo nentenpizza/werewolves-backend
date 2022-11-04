@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nentenpizza/werewolves/game/transport"
@@ -14,7 +13,6 @@ import (
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
 	"github.com/nentenpizza/werewolves/wserver"
-	"io"
 	"log"
 	"os"
 	"time"
@@ -40,12 +38,7 @@ func main() {
 	}
 	defer db.Close()
 
-	logFile, err := os.Create(fmt.Sprintf("logs_%d", time.Now().Unix()))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer logFile.Close()
-	transport.Logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
+	transport.Logger.SetOutput(os.Stdout)
 
 	serv := service.New(db)
 
@@ -79,15 +72,16 @@ func main() {
 		},
 	)
 	e := newEcho()
-	//e.GET("/ws/:token", server.WsEndpoint)
-	g := e.Group("", newJWTMiddleware())
+
 	e.Static("/files", "assets")
+
+	api := e.Group("/api", newJWTMiddleware())
 
 	h.Register(
 		e.Group("/api/auth"),
 		http.AuthEndpointGroup{})
 	h.Register(
-		g.Group("/api/users"),
+		api.Group("/users"),
 		http.UsersEndpointGroup{},
 	)
 	h.Register(
@@ -96,22 +90,22 @@ func main() {
 	)
 
 	h.Register(
-		g.Group("/api/reports"),
+		api.Group("/reports"),
 		http.ReportsEndpointGroup{},
 	)
 
 	h.Register(
-		g.Group("/api/honors"),
+		api.Group("/honors"),
 		http.HonorsEndpointGroup{},
 	)
 
 	h.Register(
-		g.Group("/api/inventory"),
+		api.Group("/inventory"),
 		http.ItemsEndpointGroup{},
 	)
 
 	h.Register(
-		g.Group("/api/friends"),
+		api.Group("/friends"),
 		http.FriendsEndpointGroup{},
 	)
 
