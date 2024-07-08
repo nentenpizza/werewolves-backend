@@ -1,7 +1,8 @@
-package transport
+package werewolves
 
 import (
 	"errors"
+
 	"github.com/dgrijalva/jwt-go"
 	j "github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/wserver"

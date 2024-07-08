@@ -1,4 +1,4 @@
-package transport
+package werewolves
 
 var (
 	RoomNotFoundErr = &ServerError{Type: "RoomNotFoundErr"}

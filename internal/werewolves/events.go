@@ -1,7 +1,7 @@
-package transport
+package werewolves
 
 import (
-	werewolves2 "github.com/nentenpizza/werewolves/game/werewolves"
+	"github.com/nentenpizza/werewolves/pkg/werewolves"
 )
 
 // Event Types for typical things
@@ -10,7 +10,7 @@ const (
 	EventTypeJoinRoom   = "join_room"
 	EventTypeLeaveRoom  = "leave_room"
 	EventTypeStartGame  = "start_room"
-	EventTypeVote       = werewolves2.VoteAction
+	EventTypeVote       = werewolves.VoteAction
 	EventTypeAllRooms   = "all_rooms"
 
 	EventTypeRoomCreated = "new_room"
@@ -38,8 +38,8 @@ const (
 
 // Event types for skills
 const (
-	EventTypeConstableShoot = werewolves2.ConstableShootAction
-	EventTypeDoctorHeal     = werewolves2.DoctorHealAction
+	EventTypeConstableShoot = werewolves.ConstableShootAction
+	EventTypeDoctorHeal     = werewolves.DoctorHealAction
 )
 
 type Event struct {
@@ -57,8 +57,8 @@ type EventErr struct {
 type (
 	// EventCreateRoom represents event for creating room
 	EventCreateRoom struct {
-		RoomName string               `json:"room_name" mapstructure:"room_name"`
-		Settings werewolves2.Settings `json:"settings" mapstructure:"settings"`
+		RoomName string              `json:"room_name" mapstructure:"room_name"`
+		Settings werewolves.Settings `json:"settings" mapstructure:"settings"`
 	}
 
 	EventRoomPlayer struct {
@@ -71,7 +71,7 @@ type (
 	}
 
 	EventNewRoomCreated struct {
-		Room *werewolves2.Room `json:"room" mapstructure:"room"`
+		Room *werewolves.Room `json:"room" mapstructure:"room"`
 	}
 
 	EventRoomDeleted struct {
@@ -95,8 +95,8 @@ type EventRevealRole struct {
 }
 
 type EventEndGame struct {
-	WonGroup  map[string]*werewolves2.Player `json:"won" mapstructure:"won"`
-	LoseGroup map[string]*werewolves2.Player `json:"lose" mapstructure:"lose"`
+	WonGroup  map[string]*werewolves.Player `json:"won" mapstructure:"won"`
+	LoseGroup map[string]*werewolves.Player `json:"lose" mapstructure:"lose"`
 
 	// XP is the amount of experience the player received for this game
 	XP int `json:"XP" mapstructure:"XP"`

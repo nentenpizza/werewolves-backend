@@ -2,12 +2,13 @@ package wserver
 
 import (
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 	OnDisconnect
 )
 
-var upgrader = websocket.Upgrader{
+var Upgrader = websocket.Upgrader{
 	ReadBufferSize:   1024,
 	WriteBufferSize:  1024,
 	HandshakeTimeout: time.Second * 60,
@@ -92,7 +93,7 @@ func (c *Conn) ReadMessage() (messageType int, p []byte, err error) {
 }
 
 func NewServer(s Settings) *Server {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	Upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	if s.UseJWT && len(s.Secret) < 1 {
 		panic("wserver: secret can not be empty string if UseJWT enabled")
 	}

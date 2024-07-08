@@ -1,35 +1,32 @@
 package main
 
 import (
-	"flag"
+	"log"
+	"os"
+	"strconv"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/nentenpizza/werewolves/game/transport"
-	"github.com/nentenpizza/werewolves/game/werewolves"
 	"github.com/nentenpizza/werewolves/handler/http"
 	"github.com/nentenpizza/werewolves/handler/websocket"
+	"github.com/nentenpizza/werewolves/internal/werewolves"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/service"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/validator"
 	"github.com/nentenpizza/werewolves/wserver"
-	"log"
-	"os"
-	"time"
 )
 
-var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd")
-
-var PGURL = flag.String("PG_URL", os.Getenv("PG_URL"), "url to your postgres db")
-
-var phaseLength = flag.Int("phase", 30, "phase length in game")
+var uuid = []byte("d9799088-48bf-41c3-a109-6f09127f66bd") // for dev purposes (i forgot xDDD)
 
 func main() {
-	flag.Parse()
 
-	werewolves.PhaseLength = time.Duration(*phaseLength) * time.Second
+	phaseLength, err := strconv.Atoi(os.Getenv("PHASE_LENGTH"))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	db, err := storage.Open(*PGURL)
+	db, err := storage.Open(os.Getenv("PG_URL"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,17 +35,17 @@ func main() {
 	}
 	defer db.Close()
 
-	transport.Logger.SetOutput(os.Stdout)
+	werewolves.Logger.SetOutput(os.Stdout)
 
 	serv := service.New(db)
 
-	wsHandler := transport.NewGame(
-		transport.Game{
+	wsHandler := werewolves.NewGame(
+		werewolves.Game{
 			DB: db,
-			Clients: transport.NewClients(
-				make(map[string]*transport.Client),
+			Clients: werewolves.NewClients(
+				make(map[string]*werewolves.Client),
 			),
-			Rooms:          transport.NewRooms(make(map[string]*werewolves.Room)),
+			Rooms:          werewolves.NewRooms(),
 			Secret:         uuid,
 			FriendsService: &service.Friends{Service: serv},
 		},
@@ -86,7 +83,7 @@ func main() {
 	)
 	h.Register(
 		e.Group(""),
-		http.GameEndpointGroup{PhaseLength: *phaseLength, Serv: server},
+		http.GameEndpointGroup{PhaseLength: phaseLength, Serv: server},
 	)
 
 	h.Register(

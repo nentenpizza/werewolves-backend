@@ -2,17 +2,18 @@ package http
 
 import (
 	"database/sql"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
 	"github.com/nentenpizza/werewolves/jwt"
-	"net/http"
 )
 
 type UsersEndpointGroup struct {
 	handler
 }
 
-func (s UsersEndpointGroup) REGISTER(h handler, g *echo.Group) {
+func (s UsersEndpointGroup) Register(h handler, g *echo.Group) {
 	s.handler = h
 	g.GET("/me", s.Me)
 	g.POST("/user", s.GetUser)

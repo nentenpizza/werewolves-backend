@@ -1,14 +1,15 @@
 package http
 
 import (
+	"net/http"
+	"time"
+
 	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
 	j "github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/wserver"
-	"net/http"
-	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -23,7 +24,7 @@ type GameEndpointGroup struct {
 	Serv        *wserver.Server
 }
 
-func (s GameEndpointGroup) REGISTER(h handler, g *echo.Group) {
+func (s GameEndpointGroup) Register(h handler, g *echo.Group) {
 	s.handler = h
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }

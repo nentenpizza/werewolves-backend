@@ -24,10 +24,12 @@ func (s Friends) Request(fromID int64, toID int64) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	has, err := s.db.Friends.IsFriend(me.Relations, toID)
 	if err != nil {
 		return 0, err
 	}
+
 	if has {
 		return 0, serviceError(http.StatusConflict, "receiver already your friend")
 	}
@@ -35,14 +37,17 @@ func (s Friends) Request(fromID int64, toID int64) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	err = s.db.Users.UpdateRelations(toID, id)
 	if err != nil {
 		return 0, err
 	}
+
 	err = s.db.Users.UpdateRelations(fromID, id)
 	if err != nil {
 		return 0, err
 	}
+
 	return id, nil
 }
 
@@ -51,10 +56,12 @@ func (s Friends) UserFriends(userID int64) ([]storage.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	users, err := s.db.Friends.UsersByIDs(user.Relations, user.ID)
 	if err != nil {
 		return nil, err
 	}
+
 	return users, nil
 }
 
@@ -63,10 +70,12 @@ func (s Friends) AcceptBySenderID(userID int64, senderID int64) error {
 	if err != nil {
 		return err
 	}
+
 	has, err := s.db.Friends.IsFriend(me.Relations, senderID)
 	if err != nil {
 		return err
 	}
+
 	if has {
 		return serviceError(http.StatusConflict, "user already your friend")
 	}
@@ -79,5 +88,6 @@ func (s Friends) UnacceptedUsers(userID int64) ([]storage.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return s.db.Friends.UnacceptedUsersByIDs(me.Relations, userID)
 }

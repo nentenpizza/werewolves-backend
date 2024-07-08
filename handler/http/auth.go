@@ -1,25 +1,26 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
 	"github.com/nentenpizza/werewolves/service"
-	"net/http"
 )
 
 type AuthEndpointGroup struct {
 	handler
 }
 
-func (s AuthEndpointGroup) REGISTER(h handler, g *echo.Group) {
+func (s AuthEndpointGroup) Register(h handler, g *echo.Group) {
 	s.handler = h
 	g.POST("/login", s.Login)
-	g.POST("/register", s.Register)
+	g.POST("/RegisterUser", s.RegisterUser)
 	g.GET("/check", s.CheckToken)
 }
 
 // Register is endpoint for signing in
-func (s AuthEndpointGroup) Register(c echo.Context) error {
+func (s AuthEndpointGroup) RegisterUser(c echo.Context) error {
 	var form service.SignUpForm
 	if err := c.Bind(&form); err != nil {
 		return err

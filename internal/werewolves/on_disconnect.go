@@ -1,4 +1,4 @@
-package transport
+package werewolves
 
 import "github.com/nentenpizza/werewolves/wserver"
 
@@ -7,26 +7,6 @@ func (g *game) OnDisconnect(ctx *wserver.Context) error {
 	if client == nil {
 		return PlayerNotFoundErr
 	}
-
-	go func() {
-		friends, err := g.friends.UserFriends(client.Token.ID)
-		if err != nil {
-			return
-		}
-
-		online := make([]string, 0)
-
-		for _, f := range friends {
-			c := g.c.Read(f.Username)
-			if c != nil {
-				online = append(online, f.Username)
-				c.conn.WriteJSON(Event{Type: EventTypeFriendLoggedOut,
-					Data: EventUsername{client.Token.Username},
-				})
-			}
-		}
-
-	}()
 
 	if client.Room() == nil {
 		g.c.Delete(client.Token.Username)
@@ -44,6 +24,23 @@ func (g *game) OnDisconnect(ctx *wserver.Context) error {
 			if len(room.Players) < 1 {
 				g.deleteRoom(room.ID)
 			}
+		}
+	}
+
+	friends, err := g.friends.UserFriends(client.Token.ID)
+	if err != nil {
+		return err
+	}
+
+	online := make([]string, 0)
+
+	for _, f := range friends {
+		c := g.c.Read(f.Username)
+		if c != nil {
+			online = append(online, f.Username)
+			c.conn.WriteJSON(Event{Type: EventTypeFriendLoggedOut,
+				Data: EventUsername{client.Token.Username},
+			})
 		}
 	}
 

@@ -7,7 +7,7 @@ import (
 )
 
 type EndpointGroup interface {
-	REGISTER(h handler, g *echo.Group)
+	Register(h handler, g *echo.Group)
 }
 
 type Handler struct {
@@ -43,5 +43,5 @@ func NewHandler(h Handler) *handler {
 }
 
 func (h handler) Register(group *echo.Group, eg EndpointGroup) {
-	eg.REGISTER(h, group)
+	eg.Register(h, group)
 }

@@ -1,12 +1,13 @@
-package transport
+package werewolves
 
 import (
 	"encoding/json"
+	"sync"
+
 	"github.com/nentenpizza/werewolves/service"
 	"github.com/nentenpizza/werewolves/storage"
 	"github.com/nentenpizza/werewolves/wserver"
 	log "github.com/sirupsen/logrus"
-	"sync"
 )
 
 var Logger = log.New()
@@ -82,7 +83,7 @@ func NewGame(h Game) *game {
 	}
 }
 
-func (g game) REGISTER(server *wserver.Server) {
+func (g game) Register(server *wserver.Server) {
 	server.Use(g.WebsocketJWT, g.Logger)
 
 	server.Handle(EventTypeCreateRoom, g.OnCreateRoom)

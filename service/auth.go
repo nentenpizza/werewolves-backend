@@ -2,13 +2,14 @@ package service
 
 import (
 	"database/sql"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/nentenpizza/werewolves/app"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/storage"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type AuthService interface {
@@ -50,13 +51,13 @@ func (s Auth) SignUp(form SignUpForm) error {
 		return serviceError(http.StatusConflict, "login already taken")
 	}
 	if !s.validateUsername(form.Username) {
-		return serviceError(http.StatusBadRequest, "usr 3-10 chars")
+		return InvalidUsername
 	}
 	if !s.validateLogin(form.Login) {
-		return serviceError(http.StatusBadRequest, "login 3-16 chars")
+		return InvalidLogin
 	}
 	if !s.validatePassword(form.Password) {
-		return serviceError(http.StatusBadRequest, "password 5-30 chars")
+		return InvalidPassword
 	}
 	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.MinCost)
 	if err != nil {

@@ -1,18 +1,19 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/app"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/service"
-	"net/http"
 )
 
 type FriendsEndpointGroup struct {
 	handler
 }
 
-func (s FriendsEndpointGroup) REGISTER(h handler, g *echo.Group) {
+func (s FriendsEndpointGroup) Register(h handler, g *echo.Group) {
 	s.handler = h
 
 	g.POST("/request", s.Request)

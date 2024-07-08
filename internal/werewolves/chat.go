@@ -1,9 +1,10 @@
-package transport
+package werewolves
 
 import (
-	"github.com/nentenpizza/werewolves/game/werewolves"
-	"github.com/nentenpizza/werewolves/wserver"
 	"time"
+
+	"github.com/nentenpizza/werewolves/pkg/werewolves"
+	"github.com/nentenpizza/werewolves/wserver"
 )
 
 var FloodWaitDuration = 2 * time.Second

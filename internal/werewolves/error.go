@@ -1,4 +1,4 @@
-package transport
+package werewolves
 
 import (
 	"github.com/nentenpizza/werewolves/wserver"

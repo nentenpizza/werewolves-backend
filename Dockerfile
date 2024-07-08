@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main ./cmd/apiserver
+RUN go build -o main ./cmd/api
 
 FROM alpine:latest
 

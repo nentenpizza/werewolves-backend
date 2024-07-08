@@ -1,17 +1,18 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/nentenpizza/werewolves/jwt"
 	"github.com/nentenpizza/werewolves/service"
-	"net/http"
 )
 
 type ItemsEndpointGroup struct {
 	handler
 }
 
-func (s ItemsEndpointGroup) REGISTER(h handler, g *echo.Group) {
+func (s ItemsEndpointGroup) Register(h handler, g *echo.Group) {
 	s.handler = h
 	g.GET("/items", s.Items)
 	g.POST("/count", s.Count)

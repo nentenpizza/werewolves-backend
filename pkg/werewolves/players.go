@@ -9,8 +9,8 @@ import (
 type Player struct {
 	Role string `json:"role"`
 
-	// Character is a in-game character, hp, skills and other its a
-	// character responsability
+	// Character is an in-game character, hp, skills and other its a
+	// character responsibility
 	Character Character `json:"character"`
 
 	// Voted means player voted or not in current phase

@@ -1,10 +1,11 @@
-package transport
+package werewolves
 
 import (
 	"encoding/json"
-	"github.com/nentenpizza/werewolves/game/werewolves"
-	"github.com/nentenpizza/werewolves/wserver"
 	"sync"
+
+	"github.com/nentenpizza/werewolves/pkg/werewolves"
+	"github.com/nentenpizza/werewolves/wserver"
 )
 
 type Rooms struct {
@@ -38,8 +39,8 @@ func (m *Rooms) MarshalJSON() ([]byte, error) {
 	return j, nil
 }
 
-func NewRooms(m map[string]*werewolves.Room) *Rooms {
-	return &Rooms{rooms: m}
+func NewRooms() *Rooms {
+	return &Rooms{rooms: make(map[string]*werewolves.Room)}
 }
 
 func (g *game) OnListRooms(c *wserver.Context) error {

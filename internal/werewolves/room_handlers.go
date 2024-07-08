@@ -1,8 +1,8 @@
-package transport
+package werewolves
 
 import (
 	"github.com/google/uuid"
-	"github.com/nentenpizza/werewolves/game/werewolves"
+	werewolves2 "github.com/nentenpizza/werewolves/pkg/werewolves"
 	"github.com/nentenpizza/werewolves/wserver"
 )
 
@@ -30,7 +30,7 @@ func (g *game) OnJoinRoom(ctx *wserver.Context) error {
 		return RoomStartedErr
 	}
 
-	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
+	player := werewolves2.NewPlayer(client.Token.Username, client.Token.Username)
 	room.AddPlayer(player)
 
 	event.PlayerID = client.Token.Username
@@ -89,10 +89,10 @@ func (g *game) OnCreateRoom(ctx *wserver.Context) error {
 		return err
 	}
 
-	player := werewolves.NewPlayer(client.Token.Username, client.Token.Username)
+	player := werewolves2.NewPlayer(client.Token.Username, client.Token.Username)
 
 	roomID := uuid.New().String()
-	room := werewolves.NewRoom(roomID, event.RoomName, werewolves.Players{}, event.Settings, client.Token.Username)
+	room := werewolves2.NewRoom(roomID, event.RoomName, werewolves2.Players{}, event.Settings, client.Token.Username)
 	g.r.Write(room.ID, room)
 
 	err = room.AddPlayer(player)
